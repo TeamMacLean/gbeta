@@ -24,6 +24,7 @@
 		saveQuery,
 		deleteQuery,
 		exportQueries,
+		exportHistory,
 		parseGqlFile,
 		importQueries,
 		generateQueryUrl,
@@ -531,7 +532,10 @@
 								No history yet
 							</div>
 						{:else}
-							<div class="flex justify-end px-2 py-1">
+							<div class="flex justify-end gap-3 px-2 py-1">
+								<button onclick={() => exportHistory(queryHistory.items)} class="text-[10px] text-[var(--color-text-muted)] hover:text-emerald-400" title="Export history as a re-runnable .gql script">
+									Export .gql
+								</button>
 								<button onclick={clearHistory} class="text-[10px] text-[var(--color-text-muted)] hover:text-red-400">
 									Clear all
 								</button>

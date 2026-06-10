@@ -4,6 +4,7 @@
  */
 
 import { browser } from '$app/environment';
+import type { QueryResult } from './queryLanguage';
 
 export interface SavedQuery {
 	id: string;
@@ -104,6 +105,50 @@ export function exportQueries(queries: SavedQuery[]): void {
 	const a = document.createElement('a');
 	a.href = url;
 	a.download = `gbetter-queries-${new Date().toISOString().split('T')[0]}.gql`;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * Export the run history as a chronological, re-runnable .gql script.
+ * Each entry keeps its natural-language input and AI reasoning as comments,
+ * so the file is both a reproducible record and importable as saved queries.
+ */
+export function exportHistory(history: QueryResult[]): void {
+	// History is stored newest-first; export oldest-first so it reads as the
+	// sequence of steps that produced the analysis. Skip non-runnable entries
+	// (e.g. "no genes found" messages).
+	const items = [...history]
+		.reverse()
+		.filter((h) => h.query?.valid && h.query.raw?.trim());
+
+	const header = [
+		'-- GBetter query history',
+		`-- Exported: ${new Date().toISOString()}`,
+		`-- ${items.length} ${items.length === 1 ? 'query' : 'queries'}`,
+		''
+	].join('\n');
+
+	const body = items
+		.map((h, i) => {
+			return [
+				`-- Query: ${i + 1}`,
+				h.timestamp ? `-- Run: ${new Date(h.timestamp).toISOString()}` : null,
+				h.naturalLanguage ? `-- from: "${h.naturalLanguage}"` : null,
+				h.reasoning ? `-- reason: ${h.reasoning}` : null,
+				h.query.raw,
+				''
+			]
+				.filter(Boolean)
+				.join('\n');
+		})
+		.join('\n');
+
+	const blob = new Blob([header + body], { type: 'text/plain' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = `gbetter-history-${new Date().toISOString().split('T')[0]}.gql`;
 	a.click();
 	URL.revokeObjectURL(url);
 }
