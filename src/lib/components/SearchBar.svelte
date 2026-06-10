@@ -6,12 +6,14 @@
 	import { useGenePicker } from '$lib/stores/genePicker.svelte';
 	import {
 		executeQuery,
+		executeQueryWithTracks,
 		getAvailableGenes,
 		type QueryResult,
 		type ListResultItem
 	} from '$lib/services/queryLanguage';
 	import { routeQuery, geneToNavigateQuery } from '$lib/services/queryRouter';
 	import { buildBrowserContext } from '$lib/services/ai';
+	import { highlightGene } from '$lib/stores/geneHighlight.svelte';
 	import type { GeneResult } from '$lib/services/geneLookup';
 	import QueryResultPanel from './QueryResultPanel.svelte';
 	import GenePicker from './GenePicker.svelte';
@@ -49,18 +51,6 @@
 		return `${g.chromosome}:${g.start.toLocaleString()}-${g.end.toLocaleString()}`;
 	}
 
-	// Highlight the resolved gene's span so it's identifiable among other features.
-	let geneHighlightId: string | null = null;
-	function highlightGene(g: GeneResult) {
-		if (geneHighlightId) viewport.removeHighlight(geneHighlightId);
-		geneHighlightId = viewport.addHighlight(
-			g.chromosome,
-			Math.max(0, g.start - 1), // 1-based -> internal 0-based
-			g.end,
-			{ label: g.symbol, color: 'rgba(124, 58, 237, 0.18)' } // accent-tinted band
-		);
-	}
-
 	// Compute suggestions based on input
 	const suggestions = $derived(() => {
 		if (!query.trim()) return [];
@@ -91,7 +81,10 @@
 		needsAIKey = false;
 
 		try {
-			const outcome = await routeQuery(query, assembly.current, aiContext);
+			// Track-aware execution so SELECT/INTERSECT/WITHIN data queries work here too.
+			const outcome = await routeQuery(query, assembly.current, aiContext, {
+				exec: (q) => executeQueryWithTracks(q, tracks.all)
+			});
 			const result = outcome.result;
 
 			note = outcome.note ?? null;

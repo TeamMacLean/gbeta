@@ -1,16 +1,19 @@
 <script lang="ts">
 	import { useViewport } from '$lib/stores/viewport.svelte';
 	import { useTracks } from '$lib/stores/tracks.svelte';
+	import { useAssembly } from '$lib/stores/assembly.svelte';
+	import { useQueryHistory } from '$lib/stores/queryHistory.svelte';
+	import { highlightGene } from '$lib/stores/geneHighlight.svelte';
 	import {
 		parseQuery,
 		executeQueryWithTracks,
 		translateNaturalLanguage,
-		getCommandHelp,
 		getAvailableGenes,
 		type QueryResult,
 		type ParsedQuery,
 		type ListResultItem
 	} from '$lib/services/queryLanguage';
+	import { routeQuery } from '$lib/services/queryRouter';
 	import {
 		translateToGQL,
 		buildBrowserContext,
@@ -32,6 +35,8 @@
 
 	const viewport = useViewport();
 	const tracks = useTracks();
+	const assembly = useAssembly();
+	const queryHistory = useQueryHistory();
 
 	// Console state
 	let isOpen = $state(false);
@@ -42,12 +47,13 @@
 	let pendingQuery = $state<ParsedQuery | null>(null);
 	let isTranslating = $state(false);
 	let translationError = $state('');
-	let sessionLog = $state<Array<{
-		timestamp: number;
-		natural?: string;
-		gql: string;
-		result: QueryResult;
-	}>>([]);
+	// The most recent NL->GQL translation, so its natural-language text and AI
+	// reasoning ride along into the shared history when the GQL is executed.
+	let lastTranslation = $state<{ natural: string; reasoning?: string } | null>(null);
+
+	function aiContext() {
+		return buildBrowserContext(tracks.all, viewport.current, getAvailableGenes());
+	}
 
 	// Current results for display
 	let currentResults = $state<ListResultItem[]>([]);
@@ -159,6 +165,7 @@
 					gqlInput = result.gql;
 					pendingQuery = parseQuery(result.gql);
 					showTranslation = true;
+					lastTranslation = { natural: naturalInput, reasoning: result.explanation };
 				} else if (result.clarificationNeeded) {
 					translationError = result.clarificationQuestion || 'Please clarify your request';
 					gqlInput = '';
@@ -211,21 +218,24 @@
 		}
 	}
 
-	function executeGql() {
+	async function executeGql() {
 		if (!gqlInput.trim() || gqlInput.startsWith('#')) return;
 
-		// Parse the (possibly edited) GQL
-		const parsed = parseQuery(gqlInput);
-		// Execute with track awareness
-		const result = executeQueryWithTracks(parsed, tracks.all);
+		// Run through the shared engine: resolves gene names, executes GQL with
+		// track awareness (SELECT/INTERSECT/WITHIN over loaded data), and can fall
+		// through to the AI for free text — the same path the search bar uses.
+		const outcome = await routeQuery(gqlInput, assembly.current, aiContext, {
+			exec: (q) => executeQueryWithTracks(q, tracks.all)
+		});
+		const result = outcome.result;
 
-		// Log to session
-		sessionLog = [{
-			timestamp: Date.now(),
-			natural: naturalInput || undefined,
-			gql: gqlInput,
-			result
-		}, ...sessionLog];
+		// Carry the NL + reasoning from the translate step into the shared history.
+		if (lastTranslation?.natural) result.naturalLanguage = lastTranslation.natural;
+		if (lastTranslation?.reasoning) result.reasoning = lastTranslation.reasoning;
+		else if (outcome.naturalLanguage) result.naturalLanguage = outcome.naturalLanguage;
+
+		if (outcome.chosen) highlightGene(outcome.chosen);
+		queryHistory.addToHistory(result);
 
 		// Handle results
 		if (result.showResultPanel && result.results) {
@@ -237,6 +247,7 @@
 		gqlInput = '';
 		showTranslation = false;
 		pendingQuery = null;
+		lastTranslation = null;
 	}
 
 	function navigateToResult(item: ListResultItem) {
@@ -249,11 +260,11 @@
 		// Don't close - keep results visible
 	}
 
-	function replayQuery(log: typeof sessionLog[0]) {
-		gqlInput = log.gql;
-		naturalInput = log.natural || '';
+	function replayQuery(item: QueryResult) {
+		gqlInput = item.query.raw;
+		naturalInput = item.naturalLanguage || '';
 		showTranslation = true;
-		pendingQuery = parseQuery(log.gql);
+		pendingQuery = parseQuery(item.query.raw);
 	}
 
 	function copyGql(gql: string) {
@@ -270,7 +281,7 @@
 	}
 
 	function clearHistory() {
-		sessionLog = [];
+		queryHistory.clearHistory();
 	}
 
 	// Keyboard shortcut to toggle console
@@ -453,8 +464,8 @@
 						class:text-[var(--color-text-muted)]={historyTab !== 'history'}
 					>
 						History
-						{#if sessionLog.length > 0}
-							<span class="ml-1 text-[10px]">({sessionLog.length})</span>
+						{#if queryHistory.count > 0}
+							<span class="ml-1 text-[10px]">({queryHistory.count})</span>
 						{/if}
 					</button>
 					<button
@@ -509,8 +520,8 @@
 
 				<div class="flex-1 overflow-y-auto">
 					{#if historyTab === 'history'}
-						<!-- History tab content -->
-						{#if sessionLog.length === 0}
+						<!-- History tab content (shared with the search bar) -->
+						{#if queryHistory.count === 0}
 							<div class="p-3 text-[10px] text-[var(--color-text-muted)] text-center">
 								No history yet
 							</div>
@@ -520,33 +531,39 @@
 									Clear all
 								</button>
 							</div>
-							{#each sessionLog as log}
+							{#each queryHistory.items as item}
 								<div class="px-2 py-1.5 border-b border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)] group">
 									<div class="flex items-center justify-between">
-										<code class="text-[10px] text-[var(--color-accent)] font-mono truncate flex-1">{log.gql}</code>
+										<code class="text-[10px] text-[var(--color-accent)] font-mono truncate flex-1">{item.query.raw}</code>
 										<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-											{#if log.result.success}
-												<button onclick={() => startSaveQuery(log.gql)} class="p-0.5 text-[var(--color-text-muted)] hover:text-emerald-400" title="Save">
+											{#if item.success}
+												<button onclick={() => startSaveQuery(item.query.raw)} class="p-0.5 text-[var(--color-text-muted)] hover:text-emerald-400" title="Save">
 													<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
 													</svg>
 												</button>
 											{/if}
-											<button onclick={() => copyGql(log.gql)} class="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" title="Copy">
+											<button onclick={() => copyGql(item.query.raw)} class="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" title="Copy">
 												<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
 												</svg>
 											</button>
-											<button onclick={() => replayQuery(log)} class="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)]" title="Replay">
+											<button onclick={() => replayQuery(item)} class="p-0.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)]" title="Replay">
 												<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
 												</svg>
 											</button>
 										</div>
 									</div>
-									<div class="text-[10px]" class:text-emerald-400={log.result.success} class:text-amber-400={!log.result.success}>
-										{log.result.message}
+									{#if item.naturalLanguage}
+										<div class="text-[10px] text-[var(--color-text-muted)] truncate">"{item.naturalLanguage}"</div>
+									{/if}
+									<div class="text-[10px]" class:text-emerald-400={item.success} class:text-amber-400={!item.success}>
+										{item.message}
 									</div>
+									{#if item.reasoning}
+										<div class="text-[10px] text-[var(--color-text-secondary)] italic truncate">💭 {item.reasoning}</div>
+									{/if}
 								</div>
 							{/each}
 						{/if}
