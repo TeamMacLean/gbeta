@@ -145,6 +145,9 @@ export async function queryBam(
 
 		// Find matching reference name
 		let resolvedChrom = chromosome;
+		if (!chromosome) {
+			throw new Error('Chromosome parameter is required');
+		}
 		if (!refNames.includes(chromosome)) {
 			// Try common variations
 			const variations = [
@@ -502,6 +505,193 @@ export async function getBamChromosomes(url: string): Promise<string[]> {
 		console.error(`Error getting chromosomes from BAM ${url}:`, error);
 		return [];
 	}
+}
+
+/**
+ * Coverage data for a genomic region
+ */
+export interface CoverageData {
+	chromosome: string;
+	start: number;
+	end: number;
+	coverage: number[];  // Coverage depth at each position
+}
+
+/**
+ * Region with coverage information
+ */
+export interface CoverageRegion {
+	chromosome: string;
+	start: number;
+	end: number;
+	coverage: number;
+}
+
+/**
+ * Compute coverage depth from BAM reads for a given region
+ * Returns an array where index i represents coverage at position start+i
+ */
+export function computeCoverage(
+	reads: BAMReadFeature[],
+	regionStart: number,
+	regionEnd: number
+): number[] {
+	const length = regionEnd - regionStart;
+	const coverage = new Array(length).fill(0);
+
+	for (const read of reads) {
+		// Calculate overlap with region
+		const overlapStart = Math.max(read.start, regionStart);
+		const overlapEnd = Math.min(read.end, regionEnd);
+
+		if (overlapStart < overlapEnd) {
+			// Increment coverage for each overlapping position
+			for (let pos = overlapStart; pos < overlapEnd; pos++) {
+				const index = pos - regionStart;
+				if (index >= 0 && index < length) {
+					coverage[index]++;
+				}
+			}
+		}
+	}
+
+	return coverage;
+}
+
+/**
+ * Find contiguous regions that meet minimum coverage criteria
+ */
+export function findCoverageRegions(
+	coverageData: number[],
+	regionStart: number,
+	minCoverage: number,
+	chromosome: string
+): CoverageRegion[] {
+	const regions: CoverageRegion[] = [];
+	let currentStart = -1;
+	let currentSum = 0;
+	let currentLength = 0;
+
+	for (let i = 0; i < coverageData.length; i++) {
+		const coverage = coverageData[i];
+		const position = regionStart + i;
+
+		if (coverage >= minCoverage) {
+			// Start or continue a region
+			if (currentStart === -1) {
+				currentStart = position;
+				currentSum = coverage;
+				currentLength = 1;
+			} else {
+				currentSum += coverage;
+				currentLength++;
+			}
+		} else {
+			// End current region if it exists
+			if (currentStart !== -1) {
+				regions.push({
+					chromosome,
+					start: currentStart,
+					end: currentStart + currentLength,
+					coverage: Math.round(currentSum / currentLength) // Average coverage
+				});
+				currentStart = -1;
+				currentSum = 0;
+				currentLength = 0;
+			}
+		}
+	}
+
+	// Handle region that extends to the end
+	if (currentStart !== -1) {
+		regions.push({
+			chromosome,
+			start: currentStart,
+			end: currentStart + currentLength,
+			coverage: Math.round(currentSum / currentLength)
+		});
+	}
+
+	return regions;
+}
+
+/**
+ * Query BAM file and return regions that meet coverage criteria
+ * This is the main function for coverage-based queries
+ */
+export async function queryBamCoverage(
+	url: string,
+	chromosome: string,
+	start: number,
+	end: number,
+	minCoverage: number,
+	options: { signal?: AbortSignal; assemblyId?: string } = {}
+): Promise<CoverageRegion[]> {
+	// 1. Query reads from the indexed BAM file (existing efficient method)
+	const reads = await queryBam(url, chromosome, start, end, options);
+
+	// 2. Compute coverage for this region only
+	const coverageArray = computeCoverage(reads, start, end);
+
+	// 3. Find regions that meet the minimum coverage criteria
+	const regions = findCoverageRegions(coverageArray, start, minCoverage, chromosome);
+
+	return regions;
+}
+
+/**
+ * Get detailed coverage data for a region (for visualization)
+ */
+export async function getBamCoverageData(
+	url: string,
+	chromosome: string,
+	start: number,
+	end: number,
+	options: { signal?: AbortSignal; assemblyId?: string; pixelsPerBase?: number } = {}
+): Promise<CoverageData> {
+	const regionSize = end - start;
+	const pixelsPerBase = options.pixelsPerBase || 1; // Default to high detail
+
+	// Use windowed coverage for large regions (density mode). At this zoom each
+	// base is sub-pixel, so we sample ~75-175 windows instead of computing a
+	// per-base array over the whole region.
+	if (pixelsPerBase < 1 && regionSize > 50000) {
+		// Resolution is driven by the user's coverage-quality setting.
+		const { useCoverageQuality } = await import('$lib/stores/coverageQuality.svelte');
+		const userResolution = useCoverageQuality().getQualityForTrackType('bam');
+
+		const { selectBamStrategy, getBamData } = await import('./bamDataStrategy');
+		const strategy = selectBamStrategy(regionSize, pixelsPerBase, userResolution);
+
+		if (strategy.useWindowed) {
+			const bamData = await getBamData(url, chromosome, start, end, strategy);
+
+			if (bamData.type === 'coverage') {
+				// Windows uniformly tile the region, so the per-window depth values
+				// are the coverage series the renderer maps proportionally across
+				// the viewport. No dense per-base array required.
+				const coverage = (bamData.data as Array<{ value: number }>).map((w) => w.value);
+
+				return {
+					chromosome,
+					start,
+					end,
+					coverage
+				};
+			}
+		}
+	}
+
+	// Fallback to per-base coverage for smaller regions or individual-reads mode.
+	const reads = await queryBam(url, chromosome, start, end, options);
+	const coverage = computeCoverage(reads, start, end);
+
+	return {
+		chromosome,
+		start,
+		end,
+		coverage
+	};
 }
 
 /**

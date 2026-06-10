@@ -15,6 +15,7 @@ import { useViewport } from '$lib/stores/viewport.svelte';
 import { useTracks, type FilterCriteria } from '$lib/stores/tracks.svelte';
 import { parseCoordinate } from '$lib/types/genome';
 import type { LoadedTrack, GeneModelFeature, VariantFeature } from '$lib/types/tracks';
+import { queryBamCoverage, type CoverageRegion } from './bam';
 
 export type QueryCommand =
 	| 'navigate'
@@ -34,7 +35,7 @@ export type QueryCommand =
 	| 'unknown';
 
 export interface SelectParams {
-	what: 'genes' | 'variants' | 'features' | 'all';
+	what: 'genes' | 'variants' | 'features' | 'regions' | 'all';
 	from?: string;           // Track name
 	where?: WhereClause[];   // WHERE conditions
 	intersect?: string;      // INTERSECT track name
@@ -255,6 +256,18 @@ export function parseQuery(input: string): ParsedQuery {
 				return { command: 'list', raw, params: { type: 'variants', filter: 'pathogenic' }, valid: true };
 			}
 
+			// "find high coverage regions" or "list high coverage areas"
+			if (restOfQuery.match(/(high\s+)?coverage\s+(regions?|areas?)/)) {
+				return { command: 'list', raw, params: { type: 'coverage', filter: 'high' }, valid: true };
+			}
+
+			// "show me areas with coverage above X"
+			const coverageThresholdMatch = restOfQuery.match(/areas?\s+with\s+coverage\s+(above|over|>=|>)\s+(\d+)/);
+			if (coverageThresholdMatch) {
+				const threshold = parseInt(coverageThresholdMatch[2], 10);
+				return { command: 'list', raw, params: { type: 'coverage', threshold }, valid: true };
+			}
+
 			// Generic list with type
 			const typeMatch = restOfQuery.match(/^(\w+)$/);
 			if (typeMatch) {
@@ -296,6 +309,8 @@ function parseSelectQuery(raw: string): ParsedQuery {
 		what = 'genes';
 	} else if (upperRaw.includes('SELECT VARIANTS') || upperRaw.includes('SELECT VARIANT')) {
 		what = 'variants';
+	} else if (upperRaw.includes('SELECT REGIONS') || upperRaw.includes('SELECT REGION')) {
+		what = 'regions';
 	} else if (upperRaw.includes('SELECT FEATURES') || upperRaw.includes('SELECT FEATURE')) {
 		what = 'features';
 	} else if (upperRaw.includes('SELECT *') || upperRaw.includes('SELECT ALL')) {
@@ -348,7 +363,7 @@ function parseSelectQuery(raw: string): ParsedQuery {
 	}
 
 	// Parse WHERE clause (simplified - handles basic conditions)
-	const whereMatch = raw.match(/WHERE\s+(.+?)(?:\s+(?:IN|FROM|INTERSECT|WITHIN|ORDER|LIMIT|$))/i);
+	const whereMatch = raw.match(/WHERE\s+(.+?)(?:\s+(?:IN|FROM|INTERSECT|WITHIN|ORDER|LIMIT)\s|$)/i);
 	if (whereMatch) {
 		const whereStr = whereMatch[1];
 		const conditions: WhereClause[] = [];
@@ -357,10 +372,36 @@ function parseSelectQuery(raw: string): ParsedQuery {
 		const condParts = whereStr.split(/\s+AND\s+/i);
 		for (const part of condParts) {
 			// Match patterns like: field = 'value', field > 10, field CONTAINS 'text'
-			const condMatch = part.match(/(\w+)\s*(=|!=|>|<|>=|<=|CONTAINS|MATCHES)\s*['"]?([^'"]+)['"]?/i);
+			const condMatch = part.match(/(\w+)\s*(>=|<=|!=|=|>|<|CONTAINS|MATCHES)\s*['"]?([^'"]+)['"]?/i);
 			if (condMatch) {
+				const field = condMatch[1];
 				const operator = condMatch[2].toLowerCase() as WhereClause['operator'];
 				let value: string | number | boolean = condMatch[3];
+
+				// Validate coverage field syntax
+				if (field.toLowerCase() === 'coverage') {
+					// Coverage requires numeric operators and numeric values
+					if (!['=', '!=', '>', '<', '>=', '<='].includes(operator)) {
+						return {
+							command: 'select',
+							raw,
+							params,
+							valid: false,
+							error: `Coverage queries require numeric operators (>=, >, etc.), not '${operator}'`
+						};
+					}
+
+					// Value must be numeric for coverage
+					if (isNaN(Number(value))) {
+						return {
+							command: 'select',
+							raw,
+							params,
+							valid: false,
+							error: `coverage threshold must be a number, got '${value}'`
+						};
+					}
+				}
 
 				// Try to parse as number
 				if (!isNaN(Number(value))) {
@@ -372,10 +413,21 @@ function parseSelectQuery(raw: string): ParsedQuery {
 				}
 
 				conditions.push({
-					field: condMatch[1],
+					field,
 					operator,
 					value
 				});
+			} else {
+				// Check for malformed WHERE clauses
+				if (part.toLowerCase().includes('coverage') && !part.includes('>=') && !part.includes('>') && !part.includes('=')) {
+					return {
+						command: 'select',
+						raw,
+						params,
+						valid: false,
+						error: 'Coverage queries require an operator and value (e.g., "coverage >= 10")'
+					};
+				}
 			}
 		}
 
@@ -878,6 +930,59 @@ function executeSelectQuery(
 		} else if (params.what === 'variants') {
 			results = extractVariantsFromTracks(tracks);
 			title = 'Variants';
+		} else if (params.what === 'regions') {
+			// Handle coverage queries
+			const viewportStore = useViewport();
+			const currentViewport = viewportStore.current;
+
+			// Find BAM/CRAM tracks for coverage analysis
+			const bamTracks = tracks.filter(track => track.typeId === 'bam' || track.typeId === 'cram');
+
+			if (bamTracks.length === 0) {
+				return {
+					success: false,
+					query,
+					message: 'No BAM/CRAM tracks loaded for coverage analysis',
+					timestamp
+				};
+			}
+
+			// Extract coverage threshold from WHERE clause
+			let coverageThreshold = 10; // default
+			if (params.where) {
+				const coverageClause = params.where.find(w => w.field.toLowerCase() === 'coverage');
+				if (coverageClause && typeof coverageClause.value === 'number') {
+					coverageThreshold = coverageClause.value;
+				}
+			}
+
+			// Determine region to query
+			let queryChromosome = currentViewport.chromosome;
+			let queryStart = currentViewport.start;
+			let queryEnd = currentViewport.end;
+
+			if (params.inRegion && typeof params.inRegion === 'object') {
+				queryChromosome = params.inRegion.chromosome;
+				queryStart = params.inRegion.start || currentViewport.start;
+				queryEnd = params.inRegion.end || currentViewport.end;
+			}
+
+			// TODO: Implement async coverage querying
+			// For now, return a placeholder result
+			results = [{
+				id: 'coverage-placeholder',
+				name: 'Coverage analysis',
+				chromosome: queryChromosome,
+				start: queryStart,
+				end: queryEnd,
+				details: {
+					message: 'Coverage analysis implementation in progress',
+					threshold: `${coverageThreshold}x`,
+					tracks: `${bamTracks.length} BAM tracks`
+				}
+			}];
+
+			title = `Coverage regions ≥${coverageThreshold}x`;
 		} else if (params.what === 'features' || params.what === 'all') {
 			// Get all features from all tracks
 			results = [

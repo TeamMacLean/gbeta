@@ -13,12 +13,35 @@
 		matchIndexFile,
 		type LocalBinaryTrackType
 	} from '$lib/services/localBinaryTracks';
+	import CoverageQualityControls from '$lib/components/CoverageQualityControls.svelte';
 
 	const tracks = useTracks();
 	const viewport = useViewport();
 	const remoteTracks = useRemoteTracks();
 	const localBinaryTracks = useLocalBinaryTracks();
 	const theme = useTheme();
+
+	// Combined tracks array for coverage controls (all track types)
+	const allTracksForControls = $derived([
+		...tracks.all.map(track => ({
+			id: track.id,
+			type: track.typeId,
+			name: track.name,
+			visible: track.visible
+		})),
+		...remoteTracks.all.map(track => ({
+			id: track.id,
+			type: track.type,
+			name: track.name,
+			visible: track.visible
+		})),
+		...localBinaryTracks.all.map(track => ({
+			id: track.id,
+			type: track.type,
+			name: track.name,
+			visible: track.visible
+		}))
+	]);
 
 	/**
 	 * Get track indicator color that matches canvas rendering
@@ -574,6 +597,9 @@
 				{/if}
 			</div>
 		</div>
+
+		<!-- Coverage Quality Controls -->
+		<CoverageQualityControls tracks={allTracksForControls} />
 
 		<!-- Add track section -->
 		<div class="p-3 border-t border-[var(--color-border)]">

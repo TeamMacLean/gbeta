@@ -33,3 +33,7 @@ vite.config.ts.timestamp-*
 tests/e2e/results/
 /coverage/
 cloudflare_API_tokens.txt
+
+# Large test data files (don't commit multi-GB BAM files)
+test-data/large-files/*.bam
+test-data/large-files/*.bai

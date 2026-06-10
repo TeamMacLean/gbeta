@@ -176,6 +176,7 @@
 			type="text"
 			bind:value={coordinateInput}
 			placeholder="chr:start-end"
+			data-testid="coordinate-input"
 			class="w-48 px-3 py-1.5 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)]"
 		/>
 		<button

@@ -7,6 +7,7 @@
 	import { useAssembly } from '$lib/stores/assembly.svelte';
 	import { useReferenceSequence } from '$lib/stores/referenceSequence.svelte';
 	import { useTheme } from '$lib/stores/theme.svelte';
+	import { useCoverageQuality } from '$lib/stores/coverageQuality.svelte';
 	import { formatCoordinate } from '$lib/types/genome';
 	import type { SignalFeature, BAMReadFeature, VariantFeature } from '$lib/types/tracks';
 	import { getTrackType } from '$lib/services/trackRegistry';
@@ -198,9 +199,11 @@
 
 	// Render canvas
 	$effect(() => {
-		// IMPORTANT: Read reactive dependencies BEFORE any early returns
-		// Otherwise Svelte won't track them and the effect won't re-run
-		const _version = tracks.renderVersion;
+		// Wrap in async IIFE to handle async rendering
+		(async () => {
+			// IMPORTANT: Read reactive dependencies BEFORE any early returns
+			// Otherwise Svelte won't track them and the effect won't re-run
+			const _version = tracks.renderVersion;
 		const _remoteRenderVersion = remoteTracks.renderVersion; // Track rawFeaturesStore changes
 		const _localBinaryRenderVersion = localBinaryTracks.renderVersion; // Track local binary track changes
 		const visibleRemote = remoteTracks.visible;
@@ -215,6 +218,8 @@
 		// Track theme for re-render on theme change
 		const _themeMode = themeStore.mode;
 		const _palette = themeStore.paletteName;
+		// Track coverage quality changes
+		const _coverageQuality = useCoverageQuality().bamQuality;
 
 		if (!canvasEl) return;
 
@@ -271,12 +276,12 @@
 
 			// Render remote tracks first (gene models)
 			if (hasRemoteContent) {
-				currentY = renderRemoteTracks(ctx, width, currentY, newBorders, newBamLayouts);
+				currentY = await renderRemoteTracks(ctx, width, currentY, newBorders, newBamLayouts);
 			}
 
 			// Render local binary tracks
 			if (hasLocalBinaryContent) {
-				currentY = renderLocalBinaryTracks(ctx, width, currentY, newBorders, newBamLayouts);
+				currentY = await renderLocalBinaryTracks(ctx, width, currentY, newBorders, newBamLayouts);
 			}
 
 			// Render local text tracks
@@ -297,6 +302,7 @@
 
 		// Draw highlights on top
 		drawHighlights(ctx, width, height, rulerHeight);
+		})(); // Close async IIFE
 	});
 
 	/**
@@ -338,13 +344,13 @@
 	/**
 	 * Render remote tracks (BigBed gene models)
 	 */
-	function renderRemoteTracks(
+	async function renderRemoteTracks(
 		ctx: CanvasRenderingContext2D,
 		width: number,
 		startY: number,
 		borders: TrackBorder[],
 		bamLayouts: BamTrackLayout[]
-	): number {
+	): Promise<number> {
 		let currentY = startY;
 		const colors = getCanvasColors();
 
@@ -424,7 +430,7 @@
 				} else if (track.type === 'bam') {
 					// BAM tracks use special rendering with sequence at high zoom
 					const rawFeatures = getRawFeatures(track.id) as BAMReadFeature[];
-					renderBamReadsWithSequence(ctx, rawFeatures, width, currentY, trackHeight, track.color);
+					await renderBamReadsWithSequence(ctx, rawFeatures, width, currentY, trackHeight, track.color, track.url);
 					// Record BAM track layout for insertion tooltip hit testing
 					bamLayouts.push({
 						trackId: track.id,
@@ -468,13 +474,13 @@
 	/**
 	 * Render local binary tracks (BigBed, BigWig, BAM, tabix)
 	 */
-	function renderLocalBinaryTracks(
+	async function renderLocalBinaryTracks(
 		ctx: CanvasRenderingContext2D,
 		width: number,
 		startY: number,
 		borders: TrackBorder[],
 		bamLayouts: BamTrackLayout[]
-	): number {
+	): Promise<number> {
 		let currentY = startY;
 		const colors = getCanvasColors();
 
@@ -552,7 +558,9 @@
 				} else if (track.type === 'bam' || track.type === 'cram') {
 					// BAM/CRAM tracks use special rendering with sequence at high zoom
 					const rawFeatures = getLocalBinaryRawFeatures(track.id) as BAMReadFeature[];
-					renderBamReadsWithSequence(ctx, rawFeatures, width, currentY, trackHeight, track.color);
+					// Local BAM/CRAM tracks are File-based and have no URL, so windowed
+					// coverage (which needs an indexable URL) is unavailable for them.
+					await renderBamReadsWithSequence(ctx, rawFeatures, width, currentY, trackHeight, track.color, undefined);
 					// Record BAM track layout for insertion tooltip hit testing
 					bamLayouts.push({
 						trackId: track.id,
@@ -1119,14 +1127,15 @@
 	 * Render BAM reads with sequence at high zoom
 	 * Shows nucleotide letters colored by base and quality
 	 */
-	function renderBamReadsWithSequence(
+	async function renderBamReadsWithSequence(
 		ctx: CanvasRenderingContext2D,
 		features: BAMReadFeature[],
 		width: number,
 		trackY: number,
 		trackHeight: number,
-		color: string
-	): void {
+		color: string,
+		trackUrl?: string
+	): Promise<void> {
 		const labelOffset = 18;
 		const plotHeight = trackHeight - labelOffset - 4;
 		const plotY = trackY + labelOffset;
@@ -1136,9 +1145,9 @@
 			f.end > viewport.current.start && f.start < viewport.current.end
 		);
 
-		if (visible.length === 0) return;
-
 		const renderMode = getReadRenderingMode(pixelsPerBase);
+
+		console.log(`[TrackView] Render mode calculation: pixelsPerBase=${pixelsPerBase}, renderMode=${renderMode}`);
 
 		if (renderMode === 'sequence') {
 			// High zoom: show nucleotide letters
@@ -1147,8 +1156,22 @@
 			// Medium zoom: show CIGAR blocks
 			renderReadsAsBlocks(ctx, visible, plotY, plotHeight, color);
 		} else {
-			// Low zoom: show as coverage histogram
-			renderBamCoverage(ctx, visible, plotY, plotHeight, color);
+			// Low zoom: use windowed coverage for large regions
+			const regionSize = viewport.current.end - viewport.current.start;
+
+			console.log(`[TrackView] Density mode triggered: renderMode=${renderMode}, regionSize=${regionSize}`);
+
+			// Use windowed coverage for regions > 50KB to prevent hangs
+			if (regionSize > 50000 && trackUrl) {
+				console.log(`[BAM Windowed] Using windowed coverage for ${regionSize}bp region`);
+				await renderBamWindowedCoverage(ctx, trackUrl, plotY, plotHeight, color);
+			} else {
+				// Fallback to traditional coverage for smaller regions
+				console.log(`[BAM Traditional] Using traditional coverage for ${regionSize}bp region`);
+				renderBamCoverage(ctx, visible, plotY, plotHeight, color);
+			}
+
+			console.log(`[TrackView] Coverage rendering complete for density mode`);
 		}
 	}
 
@@ -1457,6 +1480,74 @@
 
 			ctx.fillStyle = read.isReversed ? '#78716c' : (color || '#6366f1');
 			ctx.fillRect(Math.max(0, startX), readY, Math.min(readWidth, containerWidth - Math.max(0, startX)), readHeight);
+		}
+	}
+
+	/**
+	 * Render BAM coverage using windowed coverage for large regions
+	 */
+	async function renderBamWindowedCoverage(
+		ctx: CanvasRenderingContext2D,
+		trackUrl: string,
+		plotY: number,
+		plotHeight: number,
+		color: string
+	): Promise<void> {
+		try {
+			const { getBamCoverageData } = await import('$lib/services/bam');
+
+			const chr = viewport.current.chromosome;
+			const start = viewport.current.start;
+			const end = viewport.current.end;
+
+			if (!chr) return;
+
+			const coverageData = await getBamCoverageData(
+				trackUrl,
+				chr,
+				start,
+				end,
+				{ pixelsPerBase }
+			);
+
+			const colors = getCanvasColors();
+			const coverage = coverageData.coverage;
+
+			if (coverage.length === 0) return;
+
+			// Auto-scale to the tallest visible value.
+			let maxCoverage = 0;
+			for (const value of coverage) {
+				if (value > maxCoverage) maxCoverage = value;
+			}
+			if (maxCoverage === 0) return;
+
+			const width = containerWidth;
+
+			// Downsample to at most one point per pixel so the path stays small
+			// regardless of how many coverage points we received. Points map
+			// proportionally across the viewport width.
+			const samplesNeeded = Math.min(width, coverage.length);
+			const step = coverage.length / samplesNeeded;
+
+			ctx.fillStyle = color || colors.accent;
+			ctx.globalAlpha = 0.7;
+			ctx.beginPath();
+			ctx.moveTo(0, plotY + plotHeight);
+
+			for (let i = 0; i < samplesNeeded; i++) {
+				const coverageIndex = Math.min(coverage.length - 1, Math.floor(i * step));
+				const x = (i / samplesNeeded) * width;
+				const normalizedHeight = (coverage[coverageIndex] / maxCoverage) * plotHeight;
+				ctx.lineTo(x, plotY + plotHeight - normalizedHeight);
+			}
+
+			// Close the path to create a filled area.
+			ctx.lineTo(width, plotY + plotHeight);
+			ctx.fill();
+			ctx.globalAlpha = 1.0;
+		} catch (error) {
+			console.error('[BAM Windowed Coverage] Failed to render:', error);
 		}
 	}
 
