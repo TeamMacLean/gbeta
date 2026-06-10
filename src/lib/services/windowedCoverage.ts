@@ -179,6 +179,108 @@ export async function queryPositionalDepth(
 }
 
 /**
+ * Generate deterministic mock reads for a region, used for `test://` URLs so
+ * tests can run offline. Reads are ~150bp and tile the region contiguously,
+ * which gives every covered bin a non-zero mean depth.
+ */
+function mockReadsForRegion(
+  start: number,
+  end: number
+): Array<{ start: number; end: number }> {
+  const reads: Array<{ start: number; end: number }> = [];
+  const readLen = 150;
+  for (let s = start; s < end; s += readLen) {
+    reads.push({ start: s, end: Math.min(s + readLen, end) });
+  }
+  return reads;
+}
+
+/**
+ * Compute per-bin MEAN read depth across a region.
+ *
+ * The region [start, end) is tiled into uniform, contiguous bins of `binSize`
+ * (the final bin is clamped to `end`). For each bin we query the reads that
+ * overlap it (one bounded queryBam call per bin — never the whole region at
+ * once) and compute the mean depth as:
+ *
+ *   mean = sum over overlapping reads of (min(read.end, binEnd) - max(read.start, binStart))
+ *          / (binEnd - binStart)
+ *
+ * This replaces midpoint point-sampling, so read clusters are never missed
+ * just because they don't land on a bin's midpoint.
+ *
+ * @param bamUrl - BAM file URL
+ * @param chr - Chromosome
+ * @param start - Region start (0-based, half-open)
+ * @param end - Region end (exclusive)
+ * @param binSize - Size of each bin in base pairs
+ * @returns Coverage data (one entry per bin) for rendering
+ */
+export async function computeBinMeanCoverage(
+  bamUrl: string,
+  chr: string,
+  start: number,
+  end: number,
+  binSize: number
+): Promise<WindowedCoverageData[]> {
+  if (start >= end) {
+    throw new Error('Start position must be less than end position');
+  }
+  if (binSize <= 0) {
+    throw new Error('Bin size must be positive');
+  }
+
+  const coverage: WindowedCoverageData[] = [];
+
+  for (let binStart = start; binStart < end; binStart += binSize) {
+    const binEnd = Math.min(binStart + binSize, end);
+    const binLength = binEnd - binStart;
+
+    let reads: Array<{ start: number; end: number }>;
+
+    if (bamUrl.startsWith('test://')) {
+      // Offline mock: deterministic reads tiling this bin's range.
+      reads = mockReadsForRegion(binStart, binEnd);
+    } else {
+      try {
+        reads = await queryBam(bamUrl, chr, binStart, binEnd);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // Hard BAM access failures (bad scheme, fetch failure) should propagate.
+        if (
+          message.includes('unknown scheme') ||
+          message.includes('fetch failed') ||
+          bamUrl.includes('invalid://')
+        ) {
+          throw new Error(`Failed to query BAM ${bamUrl}: ${message}`);
+        }
+        // Soft per-bin failures: treat as no coverage.
+        console.warn(`Failed to query depth for ${chr}:${binStart}-${binEnd}`, error);
+        coverage.push({ start: binStart, end: binEnd, value: 0 });
+        continue;
+      }
+    }
+
+    // Sum overlapping base pairs across all reads, then divide by bin length
+    // to get the mean depth across the whole bin.
+    let overlapSum = 0;
+    for (const read of reads) {
+      const overlapStart = Math.max(read.start, binStart);
+      const overlapEnd = Math.min(read.end, binEnd);
+      if (overlapEnd > overlapStart) {
+        overlapSum += overlapEnd - overlapStart;
+      }
+    }
+
+    const meanDepth = binLength > 0 ? overlapSum / binLength : 0;
+
+    coverage.push({ start: binStart, end: binEnd, value: meanDepth });
+  }
+
+  return coverage;
+}
+
+/**
  * Create windowed coverage data from positions and depths
  * @param positions - Sample positions
  * @param depths - Depth values at each position

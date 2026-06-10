@@ -12,6 +12,7 @@ import {
 	generateSamplePositions,
 	queryPositionalDepth,
 	createWindowedCoverage,
+	computeBinMeanCoverage,
 	type WindowedCoverageData
 } from '$lib/services/windowedCoverage';
 
@@ -339,6 +340,77 @@ describe('Phase 1.1: Bin Size Calculation', () => {
 				// Mismatched array lengths should throw
 				expect(() => createWindowedCoverage([1000000, 2000000], [10])).toThrow();
 				expect(() => createWindowedCoverage([1000000], [10, 20])).toThrow();
+			});
+		});
+	});
+
+	describe('Phase 1.5: Per-Bin Mean Coverage', () => {
+		describe('computeBinMeanCoverage', () => {
+			test('should tile [start,end) into uniform contiguous bins', async () => {
+				const bamUrl = 'test://mock.bam';
+				const coverage = await computeBinMeanCoverage(bamUrl, 'chr1', 1000000, 1030000, 10000);
+
+				// 30KB / 10KB = 3 bins
+				expect(coverage).toHaveLength(3);
+
+				// Bins must uniformly tile the region with no gaps/overlaps
+				expect(coverage[0].start).toBe(1000000);
+				expect(coverage[0].end).toBe(1010000);
+				expect(coverage[1].start).toBe(1010000);
+				expect(coverage[1].end).toBe(1020000);
+				expect(coverage[2].start).toBe(1020000);
+				expect(coverage[2].end).toBe(1030000);
+			});
+
+			test('should cover the entire region even when not divisible by bin size', async () => {
+				const bamUrl = 'test://mock.bam';
+				const coverage = await computeBinMeanCoverage(bamUrl, 'chr1', 0, 25000, 10000);
+
+				// 3 bins: [0,10000), [10000,20000), [20000,25000)
+				expect(coverage).toHaveLength(3);
+				expect(coverage[0].start).toBe(0);
+				expect(coverage[coverage.length - 1].end).toBe(25000); // last bin reaches region end
+			});
+
+			test('should return mean depth values >= 0 for each bin', async () => {
+				const bamUrl = 'test://mock.bam';
+				const coverage = await computeBinMeanCoverage(bamUrl, 'chr1', 100000, 300000, 10000);
+
+				expect(coverage.length).toBeGreaterThan(0);
+				coverage.forEach((bin) => {
+					expect(typeof bin.value).toBe('number');
+					expect(bin.value).toBeGreaterThanOrEqual(0);
+					expect(bin.end).toBeGreaterThan(bin.start);
+				});
+			});
+
+			test('should compute mean as overlap-weighted average across the bin', async () => {
+				// test:// mock produces deterministic full-bin coverage of reads tiled
+				// across the region, so the mean should be > 0 for covered bins.
+				const bamUrl = 'test://mock.bam';
+				const coverage = await computeBinMeanCoverage(bamUrl, 'chr1', 0, 20000, 10000);
+
+				expect(coverage).toHaveLength(2);
+				// Mock reads tile the whole region, so every bin should report coverage
+				coverage.forEach((bin) => {
+					expect(bin.value).toBeGreaterThan(0);
+				});
+			});
+
+			test('should propagate hard BAM access errors', async () => {
+				const bamUrl = 'invalid://nonexistent.bam';
+				await expect(
+					computeBinMeanCoverage(bamUrl, 'chr1', 0, 20000, 10000)
+				).rejects.toThrow();
+			});
+
+			test('should throw on invalid inputs', async () => {
+				await expect(
+					computeBinMeanCoverage('test://mock.bam', 'chr1', 1000, 1000, 100)
+				).rejects.toThrow();
+				await expect(
+					computeBinMeanCoverage('test://mock.bam', 'chr1', 0, 1000, 0)
+				).rejects.toThrow();
 			});
 		});
 	});

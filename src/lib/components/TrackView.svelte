@@ -8,6 +8,8 @@
 	import { useReferenceSequence } from '$lib/stores/referenceSequence.svelte';
 	import { useTheme } from '$lib/stores/theme.svelte';
 	import { useCoverageQuality } from '$lib/stores/coverageQuality.svelte';
+	import { useCoverageWarning, isCoverageSparse } from '$lib/stores/coverageWarning.svelte';
+	import SparseCoverageDialog from './SparseCoverageDialog.svelte';
 	import { formatCoordinate } from '$lib/types/genome';
 	import type { SignalFeature, BAMReadFeature, VariantFeature } from '$lib/types/tracks';
 	import { getTrackType } from '$lib/services/trackRegistry';
@@ -64,6 +66,7 @@
 	const localBinaryTracks = useLocalBinaryTracks();
 	const assembly = useAssembly();
 	const referenceSequence = useReferenceSequence();
+	const coverageWarning = useCoverageWarning();
 
 	// Initialize viewport from URL on mount and set up gene track
 	onMount(() => {
@@ -1515,6 +1518,16 @@
 
 			if (coverage.length === 0) return;
 
+			// Density/windowed mode only ever reaches here (caller guards
+			// regionSize > 50000). If the data is essentially empty/very sparse the
+			// histogram paints blank and looks like a failed load — surface a
+			// dismissable reassurance instead. The store de-dupes per track+region
+			// so panning around a sparse area doesn't spam the dialog.
+			if (isCoverageSparse(coverage)) {
+				const region = formatCoordinate(chr, start, end);
+				coverageWarning.notifySparse(`${trackUrl}|${chr}:${start}-${end}`, region);
+			}
+
 			// Auto-scale to the tallest visible value.
 			let maxCoverage = 0;
 			for (const value of coverage) {
@@ -2353,4 +2366,6 @@
 			<div class="text-gray-400">{insertionTooltip.insertedBases.length} bp at {insertionTooltip.refPos.toLocaleString()}</div>
 		</div>
 	{/if}
+
+	<SparseCoverageDialog />
 </div>

@@ -4,7 +4,7 @@
  * Integrates windowed coverage with existing zoom-level rendering system
  */
 
-import { calculateOptimalBinSize, generateSamplePositions, queryPositionalDepth, createWindowedCoverage } from '$lib/services/windowedCoverage';
+import { computeBinMeanCoverage } from '$lib/services/windowedCoverage';
 import { queryBam } from '$lib/services/bam';
 
 export interface BamDataStrategy {
@@ -113,17 +113,12 @@ export async function getBamData(
   strategy: BamDataStrategy
 ): Promise<BamData> {
   if (strategy.useWindowed) {
-    // Use windowed coverage approach
+    // Use windowed coverage approach.
+    // Compute per-bin MEAN depth across each bin (not a midpoint sample), so
+    // read clusters are never missed because they miss a bin's midpoint.
     const binSize = strategy.binSize!;
 
-    // Generate sample positions
-    const positions = generateSamplePositions(start, end, binSize);
-
-    // Query depth at each position
-    const depths = await queryPositionalDepth(bamUrl, chr, positions);
-
-    // Create coverage data
-    const coverageData = createWindowedCoverage(positions, depths);
+    const coverageData = await computeBinMeanCoverage(bamUrl, chr, start, end, binSize);
 
     return {
       type: 'coverage',
