@@ -138,6 +138,7 @@ export const ollamaProvider: AIProvider = {
 			return {
 				success: true,
 				gql: parsed.content,
+				explanation: parsed.reasoning,
 				rawResponse
 			};
 		} catch (error) {

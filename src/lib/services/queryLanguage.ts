@@ -75,6 +75,7 @@ export interface QueryResult {
 	message: string;
 	timestamp: number;
 	naturalLanguage?: string; // Original natural language input if translated
+	reasoning?: string; // AI's one-line summary of how it interpreted the request
 	results?: ListResultItem[]; // For list/find commands
 	showResultPanel?: boolean; // Whether to show result panel
 }

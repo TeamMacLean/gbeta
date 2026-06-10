@@ -104,11 +104,15 @@ When the user refers to a gene, emit the gene SYMBOL as written (e.g. \`NAVIGATE
 
 ## Response Format
 
-Return ONLY the GQL command. No explanation, no markdown, no quotes. Just the command.
+Respond with the GQL command on the first line. Then, on a new line, add "REASON:" followed by a ONE-SENTENCE summary of how you interpreted the request — e.g. which gene a description maps to, or why you chose a particular scope. No markdown, no quotes.
 
-If the request is ambiguous or you need clarification, start your response with "CLARIFY:" followed by a brief question.
+Example:
+NAVIGATE BRCA1
+REASON: Interpreted "the breast cancer gene" as BRCA1, the classic breast-cancer susceptibility gene.
 
-If the request cannot be translated to GQL, start your response with "ERROR:" followed by a brief explanation.
+If the request is ambiguous or you need clarification, start your response with "CLARIFY:" followed by a brief question (no REASON line needed).
+
+If the request cannot be translated to GQL, start your response with "ERROR:" followed by a brief explanation (no REASON line needed).
 
 ## Examples
 
@@ -123,6 +127,7 @@ Response: SELECT GENES INTERSECT variants IN VIEW
 
 User: "go to TP53"
 Response: NAVIGATE TO TP53
+REASON: TP53 is a gene symbol; navigating to it (the browser resolves it to coordinates).
 
 User: "what pathogenic variants are in BRCA1?"
 Response: SELECT VARIANTS WHERE clinical_significance CONTAINS 'pathogenic' WITHIN BRCA1
@@ -199,6 +204,7 @@ export function buildUserMessage(input: string, context: BrowserContext): string
 export function parseAIResponse(response: string): {
 	type: 'gql' | 'clarify' | 'error';
 	content: string;
+	reasoning?: string;
 } {
 	const trimmed = response.trim();
 
@@ -216,13 +222,21 @@ export function parseAIResponse(response: string): {
 		};
 	}
 
-	// Clean up common issues
-	let gql = trimmed;
+	// Split out an optional "REASON:" summary line; everything else is the GQL.
+	let reasoning: string | undefined;
+	const gqlLines: string[] = [];
+	for (const line of trimmed.split('\n')) {
+		const m = line.match(/^\s*REASON:\s*(.*)$/i);
+		if (m) {
+			reasoning = m[1].trim();
+		} else {
+			gqlLines.push(line);
+		}
+	}
 
-	// Remove markdown code blocks if present
-	gql = gql.replace(/^```(?:gql|sql)?\n?/i, '').replace(/\n?```$/i, '');
-
-	// Remove quotes if wrapped
+	// Clean up common issues on the GQL portion
+	let gql = gqlLines.join('\n').trim();
+	gql = gql.replace(/^```(?:gql|sql)?\n?/i, '').replace(/\n?```$/i, '').trim();
 	if ((gql.startsWith('"') && gql.endsWith('"')) ||
 		(gql.startsWith("'") && gql.endsWith("'"))) {
 		gql = gql.slice(1, -1);
@@ -230,6 +244,7 @@ export function parseAIResponse(response: string): {
 
 	return {
 		type: 'gql',
-		content: gql.trim()
+		content: gql.trim(),
+		reasoning: reasoning || undefined
 	};
 }

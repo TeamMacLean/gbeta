@@ -259,6 +259,11 @@
 								"{item.naturalLanguage}"
 							</div>
 						{/if}
+						{#if item.reasoning}
+							<div class="text-[10px] text-[var(--color-text-secondary)] mt-0.5 pl-5 italic">
+								💭 {item.reasoning}
+							</div>
+						{/if}
 					</button>
 				{/each}
 			{/if}

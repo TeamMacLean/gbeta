@@ -138,7 +138,8 @@ export async function routeQuery(
 	const parsed = parseQuery(ai.gql);
 	const result = exec(parsed);
 	result.naturalLanguage = query;
-	return { result, naturalLanguage: query, note: ai.explanation };
+	result.reasoning = ai.explanation; // surfaced in history, not the inline bar
+	return { result, naturalLanguage: query };
 }
 
 function handleGeneOutcome(
@@ -156,15 +157,14 @@ function handleGeneOutcome(
 			return { result: message(outcome.term, false, outcome.error), naturalLanguage };
 		case 'resolved': {
 			const result = exec(outcome.query);
-			const base = `Showing ${identity(outcome.chosen)}`;
-			const note = explanation ? `${explanation} — ${base}` : base;
-			return { result, note, chosen: outcome.chosen, naturalLanguage };
+			if (explanation) result.reasoning = explanation; // history, not inline bar
+			return { result, note: `Showing ${identity(outcome.chosen)}`, chosen: outcome.chosen, naturalLanguage };
 		}
 		case 'multi': {
 			const result = exec(outcome.query);
+			if (explanation) result.reasoning = explanation;
 			const others = outcome.alternatives.map((a) => a.symbol).join(', ');
-			const base = `Showing ${identity(outcome.chosen)} (best match). Also found: ${others}`;
-			const note = explanation ? `${explanation} — ${base}` : base;
+			const note = `Showing ${identity(outcome.chosen)} (best match). Also found: ${others}`;
 			return {
 				result,
 				note,
