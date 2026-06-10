@@ -49,6 +49,18 @@
 		return `${g.chromosome}:${g.start.toLocaleString()}-${g.end.toLocaleString()}`;
 	}
 
+	// Highlight the resolved gene's span so it's identifiable among other features.
+	let geneHighlightId: string | null = null;
+	function highlightGene(g: GeneResult) {
+		if (geneHighlightId) viewport.removeHighlight(geneHighlightId);
+		geneHighlightId = viewport.addHighlight(
+			g.chromosome,
+			Math.max(0, g.start - 1), // 1-based -> internal 0-based
+			g.end,
+			{ label: g.symbol, color: 'rgba(124, 58, 237, 0.18)' } // accent-tinted band
+		);
+	}
+
 	// Compute suggestions based on input
 	const suggestions = $derived(() => {
 		if (!query.trim()) return [];
@@ -86,6 +98,7 @@
 			multiInfo = outcome.multi ?? null;
 			needsAIKey = outcome.needsAIKey ?? false;
 			if (outcome.naturalLanguage) result.naturalLanguage = outcome.naturalLanguage;
+			if (outcome.chosen) highlightGene(outcome.chosen);
 
 			lastResult = result;
 			queryHistory.addToHistory(result);
@@ -115,7 +128,10 @@
 		if (!choice) return;
 		const result = executeQuery(geneToNavigateQuery(choice));
 		lastResult = result;
-		note = `Showing ${choice.symbol} · ${geneCoords(choice)}`;
+		highlightGene(choice);
+		const name = choice.name && choice.name !== choice.symbol ? ` — ${choice.name}` : '';
+		const src = choice.source === 'ensembl' ? 'Ensembl' : 'MyGene.info';
+		note = `Showing ${choice.symbol}${name} · ${geneCoords(choice)} (via ${src})`;
 		// Keep the picker available in case they want to switch again.
 		multiInfo = { ...multiInfo, chosen: choice };
 		queryHistory.addToHistory(result);

@@ -67,17 +67,17 @@ describe('resolveGeneQuery', () => {
 		expect(out.status).toBe('not-a-gene-query');
 	});
 
-	it('resolves a single match into a navigate query (internal coords)', async () => {
+	it('resolves a single match into a navigate query framing the gene with padding', async () => {
 		const out = await resolveGeneQuery('navigate BRCA1', human, fakeLookup([brca1]));
 		expect(out.status).toBe('resolved');
 		if (out.status !== 'resolved') return;
 		expect(out.chosen.symbol).toBe('BRCA1');
 		expect(out.query.command).toBe('navigate');
-		expect(out.query.params).toMatchObject({
-			chromosome: 'chr17',
-			start: 43044291, // 1-based 43044292 -> internal
-			end: 43170245
-		});
+		const p = out.query.params as { chromosome: string; start: number; end: number };
+		expect(p.chromosome).toBe('chr17');
+		// View contains the gene (1-based start 43044292 -> internal 43044291) with margin on each side.
+		expect(p.start).toBeLessThan(43044291);
+		expect(p.end).toBeGreaterThan(43170245);
 	});
 
 	it('builds a highlight query for highlight commands', async () => {

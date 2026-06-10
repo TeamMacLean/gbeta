@@ -75,13 +75,18 @@ export function detectGeneTerm(input: string): { command: string; term: string }
  */
 function buildQuery(command: string, gene: GeneResult, raw: string): ParsedQuery {
 	const target = command === 'highlight' ? 'highlight' : 'navigate';
+	// Frame the gene with ~15% padding on each side (min 2kb) so the gene's
+	// highlighted span reads as a distinct block with flanking context, rather
+	// than filling the whole viewport.
+	const geneStart = Math.max(0, gene.start - 1); // 1-based -> internal 0-based
+	const pad = Math.max(2000, Math.round((gene.end - geneStart) * 0.15));
 	return {
 		command: target,
 		raw,
 		params: {
 			chromosome: gene.chromosome,
-			start: Math.max(0, gene.start - 1), // 1-based -> internal 0-based
-			end: gene.end
+			start: Math.max(0, geneStart - pad),
+			end: gene.end + pad
 		},
 		valid: true
 	};

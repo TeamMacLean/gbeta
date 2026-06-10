@@ -105,7 +105,9 @@ describe('routeQuery', () => {
 			.mockResolvedValueOnce({ status: 'resolved', term: 'BRCA1', chosen: brca1, query: { command: 'navigate', raw: 'navigate BRCA1', params: {}, valid: true } }); // AI gql
 		const aiTranslate = vi.fn(async () => ({ success: true, gql: 'navigate BRCA1', explanation: 'Going to BRCA1' }) as TranslationResponse);
 		const out = await routeQuery('take me to the breast cancer gene', human, ctx, deps({ aiConfigured: () => true, aiTranslate, resolveGene }));
-		expect(out.note).toBe('Going to BRCA1'); // AI explanation preferred
+		expect(out.note).toMatch(/Going to BRCA1/); // AI explanation included
+		expect(out.note).toMatch(/Showing BRCA1/); // plus the resolved identity
+		expect(out.chosen?.symbol).toBe('BRCA1'); // surfaced for highlighting
 		expect(out.naturalLanguage).toBe('take me to the breast cancer gene');
 	});
 });

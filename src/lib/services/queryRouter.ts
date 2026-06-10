@@ -39,6 +39,8 @@ export interface RouteOutcome {
 	note?: string;
 	/** Original natural-language input when the AI translated it. */
 	naturalLanguage?: string;
+	/** The resolved gene (single or best-guess match) — caller highlights its span. */
+	chosen?: GeneResult;
 	/** Present when there were multiple gene matches — caller may offer the picker. */
 	multi?: { term: string; chosen: GeneResult; all: GeneResult[] };
 	/** True when natural language needs the AI but no API key is configured. */
@@ -64,6 +66,16 @@ function message(raw: string, success: boolean, msg: string): QueryResult {
 
 function coords(gene: GeneResult): string {
 	return `${gene.chromosome}:${gene.start.toLocaleString()}-${gene.end.toLocaleString()}`;
+}
+
+function sourceLabel(gene: GeneResult): string {
+	return gene.source === 'ensembl' ? 'Ensembl' : 'MyGene.info';
+}
+
+/** Identification line: what the gene is and where the coordinates came from. */
+function identity(gene: GeneResult): string {
+	const name = gene.name && gene.name !== gene.symbol ? ` — ${gene.name}` : '';
+	return `${gene.symbol}${name} · ${coords(gene)} (via ${sourceLabel(gene)})`;
 }
 
 export async function routeQuery(
@@ -144,18 +156,19 @@ function handleGeneOutcome(
 			return { result: message(outcome.term, false, outcome.error), naturalLanguage };
 		case 'resolved': {
 			const result = exec(outcome.query);
-			const note = explanation ?? `Showing ${outcome.chosen.symbol} · ${coords(outcome.chosen)}`;
-			return { result, note, naturalLanguage };
+			const base = `Showing ${identity(outcome.chosen)}`;
+			const note = explanation ? `${explanation} — ${base}` : base;
+			return { result, note, chosen: outcome.chosen, naturalLanguage };
 		}
 		case 'multi': {
 			const result = exec(outcome.query);
 			const others = outcome.alternatives.map((a) => a.symbol).join(', ');
-			const note =
-				explanation ??
-				`Showing ${outcome.chosen.symbol} (best match) · ${coords(outcome.chosen)}. Also found: ${others}`;
+			const base = `Showing ${identity(outcome.chosen)} (best match). Also found: ${others}`;
+			const note = explanation ? `${explanation} — ${base}` : base;
 			return {
 				result,
 				note,
+				chosen: outcome.chosen,
 				naturalLanguage,
 				multi: { term: outcome.term, chosen: outcome.chosen, all: [outcome.chosen, ...outcome.alternatives] }
 			};
