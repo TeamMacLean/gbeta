@@ -84,7 +84,10 @@ describe('routeQuery', () => {
 
 	it('prompts for an API key when NL needs the AI but none is configured', async () => {
 		// NL that doesn't start with a GQL command keyword (show/find/go/...).
-		const out = await routeQuery('what is the tumour suppressor here', human, ctx, deps({ aiConfigured: () => false }));
+		// It must NOT be looked up literally as a gene — it goes to the AI path.
+		const resolveGene = vi.fn(async () => ({ status: 'none', term: 'x' }) as GeneQueryOutcome);
+		const out = await routeQuery('what is the tumour suppressor here', human, ctx, deps({ aiConfigured: () => false, resolveGene }));
+		expect(resolveGene).not.toHaveBeenCalled(); // multi-word NL bypasses direct lookup
 		expect(out.needsAIKey).toBe(true);
 		expect(out.result.message).toMatch(/API key/i);
 	});
@@ -101,9 +104,10 @@ describe('routeQuery', () => {
 	});
 
 	it('resolves a gene name the AI emits (AI -> NAVIGATE BRCA1 -> coords)', async () => {
+		// Multi-word NL skips the direct lookup (step 2), so resolveGene is only
+		// called once — on the AI-produced GQL.
 		const resolveGene = vi.fn()
-			.mockResolvedValueOnce({ status: 'not-a-gene-query' }) // step 2 for the raw NL
-			.mockResolvedValueOnce({ status: 'resolved', term: 'BRCA1', chosen: brca1, query: { command: 'navigate', raw: 'navigate BRCA1', params: {}, valid: true } }); // AI gql
+			.mockResolvedValue({ status: 'resolved', term: 'BRCA1', chosen: brca1, query: { command: 'navigate', raw: 'navigate BRCA1', params: {}, valid: true } });
 		const aiTranslate = vi.fn(async () => ({ success: true, gql: 'navigate BRCA1', explanation: 'Going to BRCA1' }) as TranslationResponse);
 		const out = await routeQuery('take me to the breast cancer gene', human, ctx, deps({ aiConfigured: () => true, aiTranslate, resolveGene }));
 		expect(out.note).toMatch(/Showing BRCA1/); // inline = compact identity

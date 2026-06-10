@@ -32,6 +32,9 @@ const KNOWN_COMMANDS = new Set([
 	'count'
 ]);
 
+// Commands whose argument is a coordinate target and so can take a gene name.
+const NAV_COMMANDS = new Set(['navigate', 'goto', 'go', 'highlight', 'zoom']);
+
 export interface RouteOutcome {
 	/** Executed query result (navigation already happened), or null for pure messages. */
 	result: QueryResult;
@@ -97,14 +100,24 @@ export async function routeQuery(
 		return { result: exec(parseQuery(`navigate ${query}`)) };
 	}
 
-	// 2. Gene name / navigation command. Bare terms become `navigate <term>`.
-	const geneInput = KNOWN_COMMANDS.has(firstWord) ? query : `navigate ${query}`;
-	const geneOutcome = await resolveGene(geneInput, assembly);
-	const handled = handleGeneOutcome(geneOutcome, exec);
-	if (handled) return handled;
+	const isKnownCommand = KNOWN_COMMANDS.has(firstWord);
+	const isNavCommand = NAV_COMMANDS.has(firstWord);
+	const isSingleToken = !/\s/.test(query);
+
+	// 2. Direct gene lookup ONLY for an explicit nav command (`navigate BRCA1`)
+	//    or a single bare token (a gene symbol like `BRCA1`). Multi-word,
+	//    non-command input is natural language — leave it for the AI (step 4),
+	//    which emits `NAVIGATE <gene>` that we then resolve. This prevents a
+	//    sentence like "take me to the breast cancer gene" from being looked up
+	//    literally and dead-ending at "no genes found".
+	if (isNavCommand || (!isKnownCommand && isSingleToken)) {
+		const geneInput = isNavCommand ? query : `navigate ${query}`;
+		const handled = handleGeneOutcome(await resolveGene(geneInput, assembly), exec);
+		if (handled) return handled;
+	}
 
 	// 3. Known GQL command (non-gene): parse + execute.
-	if (KNOWN_COMMANDS.has(firstWord)) {
+	if (isKnownCommand) {
 		const parsed = parseQuery(query);
 		if (parsed.valid && parsed.command !== 'unknown') {
 			return { result: exec(parsed) };
