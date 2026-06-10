@@ -9,22 +9,30 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
 const MODELS: AIModel[] = [
 	{
-		id: 'claude-sonnet-4-20250514',
-		name: 'Claude Sonnet 4',
-		description: 'Best balance of speed and capability',
+		id: 'claude-sonnet-4-6',
+		name: 'Claude Sonnet 4.6',
+		description: 'Best balance of speed and intelligence',
 		isDefault: true
 	},
 	{
-		id: 'claude-3-5-haiku-20241022',
-		name: 'Claude 3.5 Haiku',
+		id: 'claude-haiku-4-5',
+		name: 'Claude Haiku 4.5',
 		description: 'Fastest, most affordable'
 	},
 	{
-		id: 'claude-opus-4-20250514',
-		name: 'Claude Opus 4',
+		id: 'claude-opus-4-8',
+		name: 'Claude Opus 4.8',
 		description: 'Most capable, slower'
+	},
+	{
+		id: 'claude-fable-5',
+		name: 'Claude Fable 5',
+		description: 'Most powerful and intelligent'
 	}
 ];
+
+// Lightweight model used for the Settings "Test Connection" check.
+const TEST_MODEL = 'claude-haiku-4-5';
 
 export const anthropicProvider: AIProvider = {
 	id: 'anthropic',
@@ -56,7 +64,7 @@ export const anthropicProvider: AIProvider = {
 					'anthropic-dangerous-direct-browser-access': 'true'
 				},
 				body: JSON.stringify({
-					model: model || 'claude-sonnet-4-20250514',
+					model: model || 'claude-sonnet-4-6',
 					max_tokens: 256,
 					system: systemPrompt,
 					messages: [
@@ -139,7 +147,7 @@ export const anthropicProvider: AIProvider = {
 					'anthropic-dangerous-direct-browser-access': 'true'
 				},
 				body: JSON.stringify({
-					model: 'claude-3-5-haiku-20241022',
+					model: TEST_MODEL,
 					max_tokens: 10,
 					messages: [
 						{ role: 'user', content: 'Hi' }

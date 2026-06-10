@@ -27,6 +27,14 @@ const SETTINGS_KEY = 'gbetter_ai_settings';
 /**
  * Load AI settings from localStorage
  */
+// Map retired/deprecated Anthropic model IDs (persisted by older versions) to
+// current ones, so a stored selection doesn't 404 against the API.
+const ANTHROPIC_MODEL_MIGRATIONS: Record<string, string> = {
+	'claude-3-5-haiku-20241022': 'claude-haiku-4-5', // retired 2026-02-19
+	'claude-sonnet-4-20250514': 'claude-sonnet-4-6', // deprecated, retires 2026-06-15
+	'claude-opus-4-20250514': 'claude-opus-4-8' // deprecated, retires 2026-06-15
+};
+
 export function loadAISettings(): AISettings {
 	if (!browser) return DEFAULT_AI_SETTINGS;
 
@@ -34,7 +42,16 @@ export function loadAISettings(): AISettings {
 		const stored = localStorage.getItem(SETTINGS_KEY);
 		if (stored) {
 			const parsed = JSON.parse(stored);
-			return { ...DEFAULT_AI_SETTINGS, ...parsed };
+			const settings: AISettings = { ...DEFAULT_AI_SETTINGS, ...parsed };
+			// Forward-migrate a stored Anthropic model that has since been retired.
+			const current = settings.activeModels?.anthropic;
+			if (current && ANTHROPIC_MODEL_MIGRATIONS[current]) {
+				settings.activeModels = {
+					...settings.activeModels,
+					anthropic: ANTHROPIC_MODEL_MIGRATIONS[current]
+				};
+			}
+			return settings;
 		}
 	} catch (e) {
 		console.warn('Failed to load AI settings:', e);

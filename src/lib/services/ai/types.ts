@@ -111,7 +111,7 @@ export interface AISettings {
 export const DEFAULT_AI_SETTINGS: AISettings = {
 	activeProvider: 'anthropic',
 	activeModels: {
-		anthropic: 'claude-sonnet-4-20250514',
+		anthropic: 'claude-sonnet-4-6',
 		openai: 'gpt-4o-mini',
 	},
 	apiKeys: {},
