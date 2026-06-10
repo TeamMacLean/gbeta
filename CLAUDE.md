@@ -3,7 +3,7 @@
 ## Project Overview
 A modern, lightweight genome browser. Fast, beautiful, AI-native.
 
-**Status**: Active development, Session 26 (2026-03-04) - Coverage queries implemented
+**Status**: Active development, Session 27 (2026-06-10) - Gene lookup + AI shipped; query engine converged
 
 ## Key Design Principles
 1. **Fast by default** - Sub-second load, 60fps interactions
@@ -118,9 +118,19 @@ The AI MUST NOT:
 - Scalable to multi-GB files via BAM index (.bai) access
 
 ### 🔲 Not Yet Implemented
-- **Gene lookup** - navigate by gene name (planned, see Next Steps)
 - Comparison views (side-by-side query results)
-- AI conversation follow-ups
+- AI conversation follow-ups (fuller conversational panel)
+- Named "analysis/notebook" sessions (re-runnable; history `.gql` export exists)
+
+**Gene Lookup** ✅ (Session 27) - navigate/query by gene symbol
+- `src/lib/services/geneLookup.ts` - dual backend: MyGene.info (18 assemblies) +
+  Ensembl REST (6 fungal/protist). Per-assembly chromosome normalization, cache.
+- `src/lib/services/geneQuery.ts` - detect gene-targeting commands, resolve to
+  executable queries (best-guess + alternatives).
+- `src/lib/services/queryRouter.ts` - single routing engine used by SearchBar AND
+  QueryConsole: coordinate / gene / GQL / AI (deterministic-first).
+- `GenePicker.svelte` (multi-match), gene highlight (`stores/geneHighlight`),
+  inline identity note, AI `REASON:` summary surfaced in unified history.
 
 ## Commands
 ```bash
@@ -242,6 +252,23 @@ Current bucket: `pub-cdedc141a021461d9db8432b0ec926d7.r2.dev`
 ## Session Log
 
 ### Recent Sessions
+
+**Session 27 (2026-06-10)**: Gene lookup + AI; engine convergence
+- **Stabilized coverage** quality-controls (was red): fixed `viewport.current.chr`
+  -> `.chromosome` bug, replaced O(n*m) sparse-array with clean window mapping.
+- **Coverage fixes**: bin-averaging (`computeBinMeanCoverage`) instead of midpoint
+  point-sampling (was missing read clusters); sparse-region notice dialog.
+- **Gene Lookup feature** (Phases 1-5): see Feature Status. Live-verified against
+  real MyGene/Ensembl APIs (BRCA1, TP53, lacZ, GAL4->chrXVI, botrytis).
+- **AI provider fix**: model IDs were retired (Test Connection 404'd on
+  claude-3-5-haiku-20241022). Updated to current (sonnet-4-6/haiku-4-5/opus-4-8/
+  fable-5) + forward-migration of stored IDs in `loadAISettings`.
+- **AI reasoning**: prompt returns a `REASON:` line; surfaced in unified history (💭).
+- **Engine convergence**: SearchBar + QueryConsole now share `routeQuery` (bound to
+  `executeQueryWithTracks`) and `useQueryHistory`. Gene names work in the console;
+  history is unified. Console kept two-step (NL -> editable GQL -> Execute), taller
+  panel (70vh), resizable GQL box, and a History "Export .gql" (reproducible script).
+- All green: `npm run check` 0 errors, 435 unit tests pass. Pushed to origin/main.
 
 **Session 26 (2026-03-04)**: Coverage Query Implementation (TDD)
 - **Full TDD implementation** of coverage queries for BAM/CRAM files
