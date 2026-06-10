@@ -324,8 +324,8 @@
 	<!-- Console panel -->
 	<div
 		class="bg-[var(--color-bg-secondary)] border-t border-[var(--color-border)] transition-all duration-200"
-		class:h-48={!isExpanded}
-		class:h-80={isExpanded}
+		class:h-56={!isExpanded}
+		class:h-[70vh]={isExpanded}
 	>
 		<div class="h-full flex">
 			<!-- Input section (left) -->
@@ -385,10 +385,15 @@
 						<textarea
 							bind:value={gqlInput}
 							onkeydown={handleGqlInput}
-							rows="2"
+							rows={isExpanded ? 10 : 4}
 							placeholder="SELECT GENES INTERSECT variants"
-							class="w-full mt-1 px-2 py-1 text-xs font-mono bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)] resize-none"
+							class="w-full mt-1 px-2 py-1 text-xs font-mono bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded focus:outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)] resize-y"
 						></textarea>
+						{#if lastTranslation?.reasoning}
+							<div class="mt-1 text-[10px] text-[var(--color-text-secondary)] italic">
+								💭 {lastTranslation.reasoning}
+							</div>
+						{/if}
 						<div class="flex justify-between items-center mt-1">
 							<span class="text-[10px] text-[var(--color-text-muted)]">Cmd+Enter</span>
 							<button
@@ -534,7 +539,7 @@
 							{#each queryHistory.items as item}
 								<div class="px-2 py-1.5 border-b border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)] group">
 									<div class="flex items-center justify-between">
-										<code class="text-[10px] text-[var(--color-accent)] font-mono truncate flex-1">{item.query.raw}</code>
+										<code class="text-[10px] text-[var(--color-accent)] font-mono truncate flex-1" title={item.query.raw}>{item.query.raw}</code>
 										<div class="flex items-center gap-1 opacity-0 group-hover:opacity-100">
 											{#if item.success}
 												<button onclick={() => startSaveQuery(item.query.raw)} class="p-0.5 text-[var(--color-text-muted)] hover:text-emerald-400" title="Save">
@@ -562,7 +567,7 @@
 										{item.message}
 									</div>
 									{#if item.reasoning}
-										<div class="text-[10px] text-[var(--color-text-secondary)] italic truncate">💭 {item.reasoning}</div>
+										<div class="text-[10px] text-[var(--color-text-secondary)] italic" title={item.reasoning}>💭 {item.reasoning}</div>
 									{/if}
 								</div>
 							{/each}
