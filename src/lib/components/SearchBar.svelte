@@ -1,27 +1,53 @@
 <script lang="ts">
 	import { useViewport } from '$lib/stores/viewport.svelte';
 	import { useQueryHistory } from '$lib/stores/queryHistory.svelte';
+	import { useAssembly } from '$lib/stores/assembly.svelte';
+	import { useTracks } from '$lib/stores/tracks.svelte';
+	import { useGenePicker } from '$lib/stores/genePicker.svelte';
 	import {
-		parseQuery,
 		executeQuery,
-		translateNaturalLanguage,
 		getAvailableGenes,
 		type QueryResult,
 		type ListResultItem
 	} from '$lib/services/queryLanguage';
-	import { parseCoordinate } from '$lib/types/genome';
+	import { routeQuery, geneToNavigateQuery } from '$lib/services/queryRouter';
+	import { buildBrowserContext } from '$lib/services/ai';
+	import type { GeneResult } from '$lib/services/geneLookup';
 	import QueryResultPanel from './QueryResultPanel.svelte';
+	import GenePicker from './GenePicker.svelte';
 
 	const viewport = useViewport();
 	const queryHistory = useQueryHistory();
+	const assembly = useAssembly();
+	const tracks = useTracks();
+	const genePicker = useGenePicker();
 
 	let query = $state('');
 	let isLoading = $state(false);
 	let lastResult = $state<QueryResult | null>(null);
+	let note = $state<string | null>(null);
+	let multiInfo = $state<{ term: string; chosen: GeneResult; all: GeneResult[] } | null>(null);
+	let needsAIKey = $state(false);
 	let showSuggestions = $state(false);
 	let showHistory = $state(false);
 	let showResultPanel = $state(false);
 	let resultPanelData = $state<{ title: string; query: string; results: ListResultItem[] } | null>(null);
+
+	function aiContext() {
+		return buildBrowserContext(
+			tracks.all.map((t) => ({ name: t.name, typeId: t.typeId, features: t.features })),
+			{
+				chromosome: viewport.current.chromosome,
+				start: viewport.current.start,
+				end: viewport.current.end
+			},
+			getAvailableGenes()
+		);
+	}
+
+	function geneCoords(g: GeneResult): string {
+		return `${g.chromosome}:${g.start.toLocaleString()}-${g.end.toLocaleString()}`;
+	}
 
 	// Compute suggestions based on input
 	const suggestions = $derived(() => {
@@ -48,59 +74,51 @@
 
 		isLoading = true;
 		showSuggestions = false;
+		note = null;
+		multiInfo = null;
+		needsAIKey = false;
 
-		// Small delay for UX
-		await new Promise(resolve => setTimeout(resolve, 100));
+		try {
+			const outcome = await routeQuery(query, assembly.current, aiContext);
+			const result = outcome.result;
 
-		// Try direct coordinate first
-		const coord = parseCoordinate(query);
-		if (coord) {
-			const parsed = parseQuery(`navigate ${query}`);
-			const result = executeQuery(parsed);
+			note = outcome.note ?? null;
+			multiInfo = outcome.multi ?? null;
+			needsAIKey = outcome.needsAIKey ?? false;
+			if (outcome.naturalLanguage) result.naturalLanguage = outcome.naturalLanguage;
+
 			lastResult = result;
 			queryHistory.addToHistory(result);
-			if (result.success) query = '';
-			isLoading = false;
-			return;
-		}
 
-		// Try as GQL command
-		let parsed = parseQuery(query);
-
-		// If not a valid GQL command, try natural language translation
-		if (!parsed.valid || parsed.command === 'unknown') {
-			const translated = translateNaturalLanguage(query);
-			if (translated) {
-				parsed = translated;
+			// Show result panel for list queries
+			if (result.showResultPanel && result.results) {
+				resultPanelData = {
+					title: result.message,
+					query: result.query.raw,
+					results: result.results
+				};
+				showResultPanel = true;
 			}
+
+			if (result.success) {
+				query = '';
+			}
+		} finally {
+			isLoading = false;
 		}
+	}
 
-		// Execute the query
-		const result = executeQuery(parsed);
-
-		// Add natural language input if translated
-		if (parsed.raw !== query) {
-			result.naturalLanguage = query;
-		}
-
+	// Switch away from the best-guess match via the gene picker.
+	async function changeGene() {
+		if (!multiInfo) return;
+		const choice = await genePicker.open(multiInfo.all);
+		if (!choice) return;
+		const result = executeQuery(geneToNavigateQuery(choice));
 		lastResult = result;
+		note = `Showing ${choice.symbol} · ${geneCoords(choice)}`;
+		// Keep the picker available in case they want to switch again.
+		multiInfo = { ...multiInfo, chosen: choice };
 		queryHistory.addToHistory(result);
-
-		// Show result panel for list queries
-		if (result.showResultPanel && result.results) {
-			resultPanelData = {
-				title: result.message,
-				query: result.query.raw,
-				results: result.results
-			};
-			showResultPanel = true;
-		}
-
-		if (result.success) {
-			query = '';
-		}
-
-		isLoading = false;
 	}
 
 	function handleSuggestionClick(suggestion: string) {
@@ -234,10 +252,29 @@
 
 <!-- Result message with GQL visibility -->
 {#if lastResult}
-	<div class="ml-2 flex items-center gap-2 text-xs">
-		<span class={lastResult.success ? 'text-green-400' : 'text-amber-400'}>
-			{lastResult.message}
-		</span>
+	<div class="ml-2 flex flex-wrap items-center gap-2 text-xs">
+		<!-- Inline gene/AI note (lighter-touch): "Showing BRCA1 · chr17:…" -->
+		{#if note}
+			<span class="text-[var(--color-text-secondary)]">{note}</span>
+			{#if multiInfo}
+				<button
+					type="button"
+					onclick={changeGene}
+					class="text-[var(--color-accent)] hover:underline"
+				>
+					change?
+				</button>
+			{/if}
+		{:else}
+			<span class={lastResult.success ? 'text-green-400' : 'text-amber-400'}>
+				{lastResult.message}
+			</span>
+		{/if}
+
+		{#if needsAIKey}
+			<span class="text-[var(--color-text-muted)]">— open Settings → AI to add a key</span>
+		{/if}
+
 		<!-- Always show the GQL that was executed -->
 		<code class="text-[var(--color-text-muted)] bg-[var(--color-bg-tertiary)] px-1.5 py-0.5 rounded font-mono">
 			{lastResult.query.raw}
@@ -247,6 +284,9 @@
 		{/if}
 	</div>
 {/if}
+
+<!-- Gene picker (multi-match switch) -->
+<GenePicker />
 
 <!-- Query Result Panel -->
 {#if showResultPanel && resultPanelData}

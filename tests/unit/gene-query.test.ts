@@ -39,6 +39,11 @@ describe('detectGeneTerm', () => {
 		});
 	});
 
+	it('strips a leading "to" (NAVIGATE TO / go to phrasing)', () => {
+		expect(detectGeneTerm('navigate to TP53')).toEqual({ command: 'navigate', term: 'TP53' });
+		expect(detectGeneTerm('go to BRCA1')).toEqual({ command: 'go', term: 'BRCA1' });
+	});
+
 	it('ignores coordinate targets', () => {
 		expect(detectGeneTerm('navigate chr17:1-1000')).toBeNull();
 		expect(detectGeneTerm('navigate NC_000913.3:1-1000000')).toBeNull();

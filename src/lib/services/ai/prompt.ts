@@ -98,6 +98,10 @@ CORRECT - User says "show me genes with variants":
 - "show me all genes with variants" → SELECT GENES INTERSECT variants
 - "count variants on chr17" → COUNT VARIANTS IN chr17
 
+## Gene Names — IMPORTANT
+
+When the user refers to a gene, emit the gene SYMBOL as written (e.g. \`NAVIGATE BRCA1\`, \`NAVIGATE TP53\`, \`SELECT VARIANTS WITHIN MYC\`). NEVER invent or guess genomic coordinates for a gene — the browser resolves symbols to coordinates against real gene databases. Only output explicit coordinates (\`chr17:1000-2000\`) when the USER provided them.
+
 ## Response Format
 
 Return ONLY the GQL command. No explanation, no markdown, no quotes. Just the command.

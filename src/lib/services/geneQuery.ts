@@ -48,11 +48,15 @@ export function detectGeneTerm(input: string): { command: string; term: string }
 	const command = parts[0]?.toLowerCase();
 	if (!command || !NAV_COMMANDS.has(command)) return null;
 
-	const argParts = parts.slice(1);
+	let argParts = parts.slice(1);
 	if (command === 'zoom') {
 		const first = argParts[0]?.toLowerCase();
 		if (first === 'in' || first === 'out') return null; // relative zoom
 		if (argParts.length === 1 && /^\d*\.?\d+x?$/.test(first ?? '')) return null; // zoom 2x
+	}
+	// Allow "NAVIGATE TO <gene>" / "go to <gene>" phrasing.
+	if (argParts.length > 1 && argParts[0]?.toLowerCase() === 'to') {
+		argParts = argParts.slice(1);
 	}
 
 	const term = argParts.join(' ').trim();
@@ -81,6 +85,11 @@ function buildQuery(command: string, gene: GeneResult, raw: string): ParsedQuery
 		},
 		valid: true
 	};
+}
+
+/** Build a navigate query that frames a chosen gene (e.g. when switching picks). */
+export function geneToNavigateQuery(gene: GeneResult): ParsedQuery {
+	return buildQuery('navigate', gene, `navigate ${gene.symbol}`);
 }
 
 /**
