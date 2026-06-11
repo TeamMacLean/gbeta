@@ -9,9 +9,9 @@
  */
 
 import { parseCoordinate, type GenomeAssembly } from '$lib/types/genome';
-import { parseQuery, executeQuery, type QueryResult, type ParsedQuery } from './queryLanguage';
+import { parseQuery, executeQuery, type QueryResult, type ParsedQuery, type SelectParams } from './queryLanguage';
 import { resolveGeneQuery, geneToNavigateQuery, type GeneQueryOutcome } from './geneQuery';
-import type { GeneResult } from './geneLookup';
+import { lookupGene, isCoordinate, supportsGeneLookup, type GeneResult } from './geneLookup';
 import { isAIConfigured, translateToGQL } from './ai';
 import type { BrowserContext, TranslationResponse } from './ai/types';
 
@@ -56,6 +56,52 @@ export interface RouteDeps {
 	exec?: typeof executeQuery;
 	aiConfigured?: () => boolean;
 	aiTranslate?: (input: string, ctx: BrowserContext) => Promise<TranslationResponse>;
+	lookup?: typeof lookupGene;
+	/** Uppercase names of genes in loaded tracks — used to skip the API when the
+	 *  WITHIN/FIND target is already a loaded gene the executor can resolve. */
+	trackGenes?: Set<string>;
+}
+
+/**
+ * Resolve a gene-name term carried by SEARCH/WITHIN/FIND into coordinates and
+ * attach `resolvedRegion`, so the synchronous executor doesn't need a gene map.
+ * Track-first: skipped for WITHIN/FIND when the gene is already in a loaded
+ * track (the executor uses that). SEARCH always needs concrete coordinates.
+ */
+async function resolveQueryGeneTerms(
+	parsed: ParsedQuery,
+	assembly: GenomeAssembly,
+	trackGenes: Set<string>,
+	lookup: typeof lookupGene
+): Promise<void> {
+	let term: string | undefined;
+	let trackResolvable = false; // executor can resolve it from a loaded track
+	if (parsed.command === 'select' || parsed.command === 'count') {
+		term = (parsed.params as SelectParams).within;
+		trackResolvable = true;
+	} else if (parsed.command === 'list' || parsed.command === 'find' || parsed.command === 'show') {
+		term = (parsed.params as { gene?: string }).gene;
+		trackResolvable = true;
+	} else if (parsed.command === 'search') {
+		term = (parsed.params as { term?: string }).term;
+	}
+
+	if (!term || isCoordinate(term) || !supportsGeneLookup(assembly.id)) return;
+	if (trackResolvable && trackGenes.has(term.toUpperCase())) return; // executor handles it
+
+	try {
+		const matches = await lookup(term, assembly);
+		if (matches.length > 0) {
+			const g = matches[0];
+			parsed.resolvedRegion = {
+				chromosome: g.chromosome,
+				start: Math.max(0, g.start - 1), // 1-based -> internal 0-based
+				end: g.end
+			};
+		}
+	} catch {
+		// Leave resolvedRegion unset; the executor reports "not found"/ignored.
+	}
 }
 
 function message(raw: string, success: boolean, msg: string): QueryResult {
@@ -116,10 +162,13 @@ export async function routeQuery(
 		if (handled) return handled;
 	}
 
-	// 3. Known GQL command (non-gene): parse + execute.
+	// 3. Known GQL command (non-gene): parse, resolve any gene term in
+	//    SEARCH/WITHIN/FIND to coordinates, then execute.
 	if (isKnownCommand) {
 		const parsed = parseQuery(query);
 		if (parsed.valid && parsed.command !== 'unknown') {
+			const lookup = deps.lookup ?? lookupGene;
+			await resolveQueryGeneTerms(parsed, assembly, deps.trackGenes ?? new Set(), lookup);
 			return { result: exec(parsed) };
 		}
 	}

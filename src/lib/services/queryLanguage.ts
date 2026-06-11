@@ -57,6 +57,12 @@ export interface ParsedQuery {
 	params: Record<string, string | number | boolean> | SelectParams;
 	valid: boolean;
 	error?: string;
+	/**
+	 * A gene term (in SEARCH/WITHIN/FIND) resolved to internal 0-based coordinates
+	 * by the async router before execution — so the synchronous executor never
+	 * needs a hardcoded gene map.
+	 */
+	resolvedRegion?: { chromosome: string; start: number; end: number };
 }
 
 export interface ListResultItem {
@@ -79,20 +85,6 @@ export interface QueryResult {
 	results?: ListResultItem[]; // For list/find commands
 	showResultPanel?: boolean; // Whether to show result panel
 }
-
-// Known genes for search (placeholder - would be loaded from index)
-const KNOWN_GENES: Record<string, { chr: string; start: number; end: number }> = {
-	'TP53': { chr: 'chr17', start: 7668421, end: 7687490 },
-	'BRCA1': { chr: 'chr17', start: 43044295, end: 43170245 },
-	'BRCA2': { chr: 'chr13', start: 32315086, end: 32400266 },
-	'EGFR': { chr: 'chr7', start: 55019017, end: 55211628 },
-	'MYC': { chr: 'chr8', start: 127735434, end: 127742951 },
-	'KRAS': { chr: 'chr12', start: 25205246, end: 25250936 },
-	'PIK3CA': { chr: 'chr3', start: 179148114, end: 179240093 },
-	'APC': { chr: 'chr5', start: 112707498, end: 112846239 },
-	'PTEN': { chr: 'chr10', start: 87863438, end: 87971930 },
-	'RB1': { chr: 'chr13', start: 48303747, end: 48481890 },
-};
 
 /**
  * Parse a GQL command string
@@ -501,13 +493,15 @@ export function executeQuery(query: ParsedQuery): QueryResult {
 
 		case 'search': {
 			const { term } = query.params as { term: string };
-			const gene = KNOWN_GENES[term];
-			if (gene) {
-				viewport.navigateTo(gene.chr, gene.start, gene.end);
+			// The router resolves the gene term to coordinates (track-first, then
+			// the gene-lookup API) and attaches resolvedRegion.
+			if (query.resolvedRegion) {
+				const { chromosome, start, end } = query.resolvedRegion;
+				viewport.navigateTo(chromosome, start, end);
 				return {
 					success: true,
 					query,
-					message: `Found ${term} at ${gene.chr}:${gene.start}-${gene.end}`,
+					message: `Found ${term} at ${chromosome}:${start}-${end}`,
 					timestamp
 				};
 			}
@@ -647,23 +641,16 @@ export function executeQuery(query: ParsedQuery): QueryResult {
 			const results: ListResultItem[] = [];
 
 			if (params.type === 'genes') {
-				// List all known genes
-				for (const [name, info] of Object.entries(KNOWN_GENES)) {
-					results.push({
-						id: name,
-						name,
-						chromosome: info.chr,
-						start: info.start,
-						end: info.end,
-						type: 'gene'
-					});
-				}
-
-				// Filter if needed
-				if (params.filter === 'with_variants') {
-					// This would need track data access - for now return all genes
-					// In a real implementation, we'd check against loaded variant tracks
-				}
+				// Genes come from loaded gene tracks (handled by the track-aware
+				// executor). Without track access there's nothing to list.
+				return {
+					success: true,
+					query,
+					message: 'Load a gene track (GFF3/BED) to list genes',
+					timestamp,
+					showResultPanel: true,
+					results: []
+				};
 			} else if (params.type === 'variants') {
 				// This would need access to loaded tracks
 				// For now, return a message indicating tracks need to be loaded
@@ -735,9 +722,8 @@ function extractAllFeaturesFromTrack(track: LoadedTrack): ListResultItem[] {
 /**
  * Helper: Extract genes from loaded tracks (GFF3/gene model tracks)
  * @param tracks - Tracks to extract from
- * @param fallbackToKnown - Whether to fall back to KNOWN_GENES if no genes found (default: true)
  */
-function extractGenesFromTracks(tracks: LoadedTrack[], fallbackToKnown: boolean = true): ListResultItem[] {
+function extractGenesFromTracks(tracks: LoadedTrack[]): ListResultItem[] {
 	const genes: ListResultItem[] = [];
 	const seenGenes = new Set<string>();
 
@@ -766,23 +752,6 @@ function extractGenesFromTracks(tracks: LoadedTrack[], fallbackToKnown: boolean 
 					}
 				}
 			}
-		}
-	}
-
-	// Also include known genes if no tracks have gene data AND fallback is enabled
-	if (genes.length === 0 && fallbackToKnown) {
-		for (const [name, info] of Object.entries(KNOWN_GENES)) {
-			genes.push({
-				id: name,
-				name,
-				chromosome: info.chr,
-				start: info.start,
-				end: info.end,
-				type: 'gene',
-				details: {
-					length: String(info.end - info.start)
-				}
-			});
 		}
 	}
 
@@ -929,9 +898,9 @@ function executeSelectQuery(
 			};
 		}
 	} else {
-		// No FROM clause - get results based on 'what' we're selecting with fallback to KNOWN_GENES
+		// No FROM clause - get results from loaded tracks based on 'what'
 		if (params.what === 'genes') {
-			results = extractGenesFromTracks(tracks, true); // fallback enabled
+			results = extractGenesFromTracks(tracks); // fallback enabled
 			title = 'Genes';
 		} else if (params.what === 'variants') {
 			results = extractVariantsFromTracks(tracks);
@@ -992,7 +961,7 @@ function executeSelectQuery(
 		} else if (params.what === 'features' || params.what === 'all') {
 			// Get all features from all tracks
 			results = [
-				...extractGenesFromTracks(tracks, true),
+				...extractGenesFromTracks(tracks),
 				...extractVariantsFromTracks(tracks)
 			];
 			title = 'Features';
@@ -1054,7 +1023,7 @@ function executeSelectQuery(
 
 	// Apply WITHIN filter (inside a gene or region)
 	if (params.within) {
-		// Check if it's a gene name
+		// Prefer a gene from the loaded tracks (the real annotation).
 		const allGenes = extractGenesFromTracks(tracks);
 		const gene = allGenes.find(g => g.name.toUpperCase() === params.within?.toUpperCase());
 
@@ -1063,8 +1032,14 @@ function executeSelectQuery(
 				regionsOverlap(item.chromosome, item.start, item.end, gene.chromosome, gene.start, gene.end)
 			);
 			title += ` within ${gene.name}`;
+		} else if (query.resolvedRegion) {
+			// Resolved by the router (gene-lookup API) before execution.
+			const r = query.resolvedRegion;
+			results = results.filter(item =>
+				regionsOverlap(item.chromosome, item.start, item.end, r.chromosome, r.start, r.end)
+			);
+			title += ` within ${params.within}`;
 		} else {
-			// Try as region
 			const coord = parseCoordinate(params.within);
 			if (coord) {
 				results = results.filter(item =>
@@ -1072,17 +1047,8 @@ function executeSelectQuery(
 				);
 				title += ` within ${params.within}`;
 			} else {
-				// Try KNOWN_GENES
-				const knownGene = KNOWN_GENES[params.within.toUpperCase()];
-				if (knownGene) {
-					results = results.filter(item =>
-						regionsOverlap(item.chromosome, item.start, item.end, knownGene.chr, knownGene.start, knownGene.end)
-					);
-					title += ` within ${params.within.toUpperCase()}`;
-				} else {
-					// Don't silently drop the constraint — tell the user it was ignored.
-					title += ` — note: WITHIN target "${params.within}" is not a known gene or valid region (ignored)`;
-				}
+				// Don't silently drop the constraint — tell the user it was ignored.
+				title += ` — note: WITHIN target "${params.within}" could not be resolved to a gene or region (ignored)`;
 			}
 		}
 	}
@@ -1322,13 +1288,13 @@ export function executeQueryWithTracks(query: ParsedQuery, tracks: LoadedTrack[]
 			const targetGene = genes.find(g => g.name.toUpperCase() === params.gene?.toUpperCase());
 
 			if (!targetGene) {
-				// Try KNOWN_GENES
-				const knownGene = KNOWN_GENES[params.gene.toUpperCase()];
-				if (knownGene) {
+				// Use the router-resolved region (gene-lookup API) if present.
+				const r = query.resolvedRegion;
+				if (r) {
 					results = variants.filter(v =>
-						regionsOverlap(knownGene.chr, knownGene.start, knownGene.end, v.chromosome, v.start, v.end)
+						regionsOverlap(r.chromosome, r.start, r.end, v.chromosome, v.start, v.end)
 					);
-					title = `Variants in ${params.gene.toUpperCase()} (${results.length})`;
+					title = `Variants in ${params.gene} (${results.length})`;
 				} else {
 					return {
 						success: false,
@@ -1505,14 +1471,10 @@ export function translateNaturalLanguage(input: string): ParsedQuery | null {
 		return parseQuery(`highlight ${highlightRegionMatch[1]}`);
 	}
 
-	// "highlight GENE" - highlight the gene region
+	// "highlight GENE" - highlight the gene region (gene name resolved downstream)
 	const highlightGeneMatch = lower.match(/^(?:highlight|mark)\s+([a-z0-9]+)$/i);
 	if (highlightGeneMatch) {
-		const geneName = highlightGeneMatch[1].toUpperCase();
-		const gene = KNOWN_GENES[geneName];
-		if (gene) {
-			return parseQuery(`highlight ${gene.chr}:${gene.start}-${gene.end}`);
-		}
+		return parseQuery(`highlight ${highlightGeneMatch[1].toUpperCase()}`);
 	}
 
 	// "clear highlights", "remove highlights"
@@ -1529,9 +1491,9 @@ export function translateNaturalLanguage(input: string): ParsedQuery | null {
 	// GENE/COORDINATE SEARCH (more generic - check LAST)
 	// ============================================================
 
-	// Just a gene name by itself
+	// Just a gene-symbol-looking token by itself
 	const upperInput = input.toUpperCase().trim();
-	if (KNOWN_GENES[upperInput]) {
+	if (/^[A-Z][A-Z0-9]{1,10}$/.test(upperInput)) {
 		return parseQuery(`search gene ${upperInput}`);
 	}
 
@@ -1551,7 +1513,7 @@ export function translateNaturalLanguage(input: string): ParsedQuery | null {
 	const showGeneMatch = lower.match(/^(?:show|view|display)\s+([a-z0-9]+)$/i);
 	if (showGeneMatch) {
 		const possibleGene = showGeneMatch[1].toUpperCase();
-		if (KNOWN_GENES[possibleGene] || possibleGene.match(/^[A-Z][A-Z0-9]{1,10}$/)) {
+		if (possibleGene.match(/^[A-Z][A-Z0-9]{1,10}$/)) {
 			return parseQuery(`search gene ${possibleGene}`);
 		}
 	}
@@ -1624,8 +1586,13 @@ export function getCommandHelp(): Array<{ command: string; syntax: string; descr
 }
 
 /**
- * Get available genes for autocomplete
+ * Get available gene names (for autocomplete / AI context) from loaded gene
+ * tracks — real data, not a hardcoded list.
  */
-export function getAvailableGenes(): string[] {
-	return Object.keys(KNOWN_GENES);
+export function getAvailableGenes(tracks: LoadedTrack[] = []): string[] {
+	const names = new Set<string>();
+	for (const g of extractGenesFromTracks(tracks)) {
+		if (g.name) names.add(g.name);
+	}
+	return [...names];
 }

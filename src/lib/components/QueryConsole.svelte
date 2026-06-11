@@ -53,7 +53,7 @@
 	let lastTranslation = $state<{ natural: string; reasoning?: string } | null>(null);
 
 	function aiContext() {
-		return buildBrowserContext(tracks.all, viewport.current, getAvailableGenes());
+		return buildBrowserContext(tracks.all, viewport.current, getAvailableGenes(tracks.all));
 	}
 
 	// Current results for display
@@ -157,7 +157,7 @@
 				const context = buildBrowserContext(
 					tracks.all,
 					viewport.current,
-					getAvailableGenes()
+					getAvailableGenes(tracks.all)
 				);
 
 				const result = await translateToGQL(naturalInput, context);
@@ -226,7 +226,8 @@
 		// track awareness (SELECT/INTERSECT/WITHIN over loaded data), and can fall
 		// through to the AI for free text — the same path the search bar uses.
 		const outcome = await routeQuery(gqlInput, assembly.current, aiContext, {
-			exec: (q) => executeQueryWithTracks(q, tracks.all)
+			exec: (q) => executeQueryWithTracks(q, tracks.all),
+			trackGenes: new Set(getAvailableGenes(tracks.all).map((q) => q.toUpperCase()))
 		});
 		const result = outcome.result;
 

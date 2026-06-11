@@ -43,7 +43,7 @@
 				start: viewport.current.start,
 				end: viewport.current.end
 			},
-			getAvailableGenes()
+			getAvailableGenes(tracks.all)
 		);
 	}
 
@@ -56,7 +56,7 @@
 		if (!query.trim()) return [];
 
 		const lower = query.toLowerCase();
-		const genes = getAvailableGenes();
+		const genes = getAvailableGenes(tracks.all);
 
 		// Gene name suggestions
 		const geneMatches = genes
@@ -86,7 +86,8 @@
 		try {
 			// Track-aware execution so SELECT/INTERSECT/WITHIN data queries work here too.
 			const outcome = await routeQuery(query, assembly.current, aiContext, {
-				exec: (q) => executeQueryWithTracks(q, tracks.all)
+				exec: (q) => executeQueryWithTracks(q, tracks.all),
+				trackGenes: new Set(getAvailableGenes(tracks.all).map((g) => g.toUpperCase()))
 			});
 			// A newer search was started while we awaited — drop this stale result
 			// so it can't overwrite the newer one.

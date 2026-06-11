@@ -74,6 +74,36 @@ describe('routeQuery', () => {
 		expect(out.result.message).toMatch(/No genes matching/);
 	});
 
+	it('resolves a gene in SELECT WITHIN to coordinates (no hardcoded map)', async () => {
+		execStub.mockClear();
+		const lookup = vi.fn(async () => [brca1]);
+		await routeQuery('SELECT * WITHIN BRCA1', human, ctx, deps({ lookup }));
+		expect(lookup).toHaveBeenCalledWith('BRCA1', human);
+		const executed = execStub.mock.calls[0][0];
+		expect(executed.resolvedRegion).toMatchObject({ chromosome: 'chr17', start: 43044291, end: 43170245 });
+	});
+
+	it('skips the lookup when the WITHIN gene is already in a loaded track', async () => {
+		const lookup = vi.fn(async () => [brca1]);
+		await routeQuery('SELECT * WITHIN BRCA1', human, ctx, deps({ lookup, trackGenes: new Set(['BRCA1']) }));
+		expect(lookup).not.toHaveBeenCalled();
+	});
+
+	it('does not look up a WITHIN coordinate', async () => {
+		const lookup = vi.fn(async () => [brca1]);
+		await routeQuery('SELECT * WITHIN chr1:1-1000', human, ctx, deps({ lookup }));
+		expect(lookup).not.toHaveBeenCalled();
+	});
+
+	it('resolves a SEARCH gene term to a region', async () => {
+		execStub.mockClear();
+		const lookup = vi.fn(async () => [brca1]);
+		await routeQuery('search gene BRCA1', human, ctx, deps({ lookup }));
+		const executed = execStub.mock.calls[0][0];
+		expect(executed.command).toBe('search');
+		expect(executed.resolvedRegion).toBeTruthy();
+	});
+
 	it('executes a known non-gene GQL command', async () => {
 		execStub.mockClear();
 		const out = await routeQuery('select genes', human, ctx, deps());

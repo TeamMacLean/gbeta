@@ -713,17 +713,23 @@ describe('Helper functions', () => {
 	});
 
 	describe('getAvailableGenes', () => {
-		it('returns array of gene names', () => {
-			const genes = getAvailableGenes();
-			expect(Array.isArray(genes)).toBe(true);
-			expect(genes.length).toBeGreaterThan(0);
+		it('returns [] when no gene tracks are loaded (no hardcoded fallback)', () => {
+			expect(getAvailableGenes()).toEqual([]);
+			expect(getAvailableGenes([])).toEqual([]);
 		});
 
-		it('includes known genes', () => {
-			const genes = getAvailableGenes();
-			expect(genes).toContain('TP53');
-			expect(genes).toContain('BRCA1');
-			expect(genes).toContain('EGFR');
+		it('returns gene names from loaded gene tracks', () => {
+			const track: any = {
+				typeId: 'gff3',
+				name: 'genes',
+				features: [
+					{ id: 'g1', featureType: 'gene', name: 'MYGENE1', chromosome: 'chr1', start: 1, end: 100 },
+					{ id: 'g2', featureType: 'mRNA', name: 'MYGENE2', chromosome: 'chr1', start: 200, end: 300 }
+				]
+			};
+			const genes = getAvailableGenes([track]);
+			expect(genes).toContain('MYGENE1');
+			expect(genes).toContain('MYGENE2');
 		});
 	});
 
@@ -888,12 +894,12 @@ describe('GQL Natural Language - Filter/Highlight', () => {
 			expect(result?.command).toBe('highlight');
 		});
 
-		it('translates "highlight TP53" for known gene', () => {
+		it('translates "highlight TP53" to a highlight command (gene resolved downstream)', () => {
 			const result = translateNaturalLanguage('highlight TP53');
 			expect(result?.command).toBe('highlight');
-			expect(result?.params).toMatchObject({
-				chromosome: 'chr17',
-			});
+			// The gene name is preserved; coordinate resolution happens in the
+			// router (no hardcoded gene map anymore).
+			expect(result?.raw).toMatch(/TP53/i);
 		});
 
 		it('translates "clear highlights"', () => {
