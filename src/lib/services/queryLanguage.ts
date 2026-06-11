@@ -182,12 +182,17 @@ export function parseQuery(input: string): ParsedQuery {
 		}
 
 		case 'filter': {
-			// Parse key=value pairs
+			// Parse field/operator/value tokens. Capture the comparison operator
+			// explicitly so "score>=100" keeps the >= (splitting on '=' mangled it
+			// into a "score>" key). The value carries the operator prefix that the
+			// executor expects (e.g. ">=100").
 			const filters: Record<string, string> = {};
+			const filterRe = /^([A-Za-z_][\w.]*)\s*(>=|<=|!=|>|<|=)\s*(.+)$/;
 			for (let i = 1; i < parts.length; i++) {
-				const [key, value] = parts[i].split('=');
-				if (key && value) {
-					filters[key] = value;
+				const m = parts[i].match(filterRe);
+				if (m) {
+					const [, field, op, value] = m;
+					filters[field] = op === '=' ? value : op + value;
 				}
 			}
 			if (Object.keys(filters).length > 0) {
@@ -1074,6 +1079,9 @@ function executeSelectQuery(
 						regionsOverlap(item.chromosome, item.start, item.end, knownGene.chr, knownGene.start, knownGene.end)
 					);
 					title += ` within ${params.within.toUpperCase()}`;
+				} else {
+					// Don't silently drop the constraint — tell the user it was ignored.
+					title += ` — note: WITHIN target "${params.within}" is not a known gene or valid region (ignored)`;
 				}
 			}
 		}
@@ -1097,7 +1105,20 @@ function executeSelectQuery(
 
 	// Apply WHERE conditions
 	if (params.where && params.where.length > 0) {
+		const unknownFields: string[] = [];
 		for (const condition of params.where) {
+			// A WHERE on a field that NO result has would silently empty the set —
+			// surface that as a note so the user isn't left guessing.
+			if (
+				results.length > 0 &&
+				!results.some(
+					(item) =>
+						(item.details?.[condition.field] ??
+							(item as unknown as Record<string, unknown>)[condition.field]) !== undefined
+				)
+			) {
+				unknownFields.push(condition.field);
+			}
 			results = results.filter(item => {
 				const itemValue = item.details?.[condition.field] ?? (item as unknown as Record<string, unknown>)[condition.field];
 				if (itemValue === undefined) return false;
@@ -1132,6 +1153,9 @@ function executeSelectQuery(
 			});
 		}
 		title += ' (filtered)';
+		if (unknownFields.length > 0) {
+			title += ` — note: no results have field(s) ${[...new Set(unknownFields)].join(', ')}`;
+		}
 	}
 
 	// Apply ORDER BY
