@@ -118,6 +118,11 @@ export async function lookupGene(
 	const trimmed = term.trim();
 	if (!trimmed) return [];
 
+	// A gene symbol is a single token — never a phrase. Reject multi-word junk
+	// (e.g. a hallucinated "FIRST GENE IN <track>") so it can't fuzzy-match to a
+	// random gene and navigate somewhere unexpected.
+	if (/\s/.test(trimmed)) return [];
+
 	const config = GENE_LOOKUP_CONFIG[assembly.id];
 	if (!config) {
 		throw new Error(`Gene lookup not available for ${assembly.name}`);

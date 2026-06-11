@@ -327,22 +327,26 @@ function parseSelectQuery(raw: string): ParsedQuery {
 
 	const params: SelectParams = { what };
 
+	// Track/target names may be quoted (the AI often quotes them) and may contain
+	// spaces/hyphens — accept "quoted", 'quoted', or a bare token, then unquote.
+	const NAME = `("[^"]+"|'[^']+'|[^\\s]+)`;
+
 	// Parse FROM clause
-	const fromMatch = raw.match(/FROM\s+([^\s]+)/i);
+	const fromMatch = raw.match(new RegExp(`FROM\\s+${NAME}`, 'i'));
 	if (fromMatch) {
-		params.from = fromMatch[1];
+		params.from = unquote(fromMatch[1]);
 	}
 
 	// Parse INTERSECT clause
-	const intersectMatch = raw.match(/INTERSECT\s+([^\s]+)/i);
+	const intersectMatch = raw.match(new RegExp(`INTERSECT\\s+${NAME}`, 'i'));
 	if (intersectMatch) {
-		params.intersect = intersectMatch[1];
+		params.intersect = unquote(intersectMatch[1]);
 	}
 
 	// Parse WITHIN clause
-	const withinMatch = raw.match(/WITHIN\s+([^\s]+)/i);
+	const withinMatch = raw.match(new RegExp(`WITHIN\\s+${NAME}`, 'i'));
 	if (withinMatch) {
-		params.within = withinMatch[1];
+		params.within = unquote(withinMatch[1]);
 	}
 
 	// Parse IN clause (VIEW, CHROMOSOME, chr17, or chr17:1000-2000)
@@ -729,6 +733,27 @@ function extractAllFeaturesFromTrack(track: LoadedTrack): ListResultItem[] {
 	return results;
 }
 
+// Track-type recognition. The registry's canonical ids are 'gene-model' and
+// 'variants'; remote/legacy paths may use 'gff3'/'gtf'/'vcf'. Match all so the
+// query engine sees real loaded tracks.
+const GENE_TRACK_TYPES = new Set(['gene-model', 'geneModel', 'gff3', 'gtf']);
+const VARIANT_TRACK_TYPES = new Set(['variants', 'variant', 'vcf']);
+function isGeneTrack(t: { typeId: string }): boolean {
+	return GENE_TRACK_TYPES.has(t.typeId);
+}
+function isVariantTrack(t: { typeId: string }): boolean {
+	return VARIANT_TRACK_TYPES.has(t.typeId);
+}
+
+/** Strip a single layer of surrounding single/double quotes from a name. */
+function unquote(s: string): string {
+	const t = s.trim();
+	if (t.length >= 2 && ((t[0] === '"' && t.at(-1) === '"') || (t[0] === "'" && t.at(-1) === "'"))) {
+		return t.slice(1, -1);
+	}
+	return t;
+}
+
 /**
  * Helper: Extract genes from loaded tracks (GFF3/gene model tracks)
  * @param tracks - Tracks to extract from
@@ -738,7 +763,7 @@ function extractGenesFromTracks(tracks: LoadedTrack[]): ListResultItem[] {
 	const seenGenes = new Set<string>();
 
 	for (const track of tracks) {
-		if (track.typeId === 'gff3' || track.typeId === 'geneModel') {
+		if (isGeneTrack(track)) {
 			for (const feature of track.features as GeneModelFeature[]) {
 				// Look for top-level gene features or mRNAs
 				if (feature.featureType === 'gene' || feature.featureType === 'mRNA') {
@@ -775,7 +800,7 @@ function extractVariantsFromTracks(tracks: LoadedTrack[]): ListResultItem[] {
 	const variants: ListResultItem[] = [];
 
 	for (const track of tracks) {
-		if (track.typeId === 'vcf') {
+		if (isVariantTrack(track)) {
 			for (const feature of track.features as VariantFeature[]) {
 				const name = feature.name || `${feature.ref}>${feature.alt.join(',')}`;
 				// Surface all VCF INFO fields (lowercased) so WHERE can filter on
@@ -871,12 +896,12 @@ function findTrackByName(tracks: LoadedTrack[], name: string): LoadedTrack | und
 	found = tracks.find(t => t.name.toLowerCase().includes(lowerName));
 	if (found) return found;
 
-	// Match by type
-	if (lowerName === 'variants' || lowerName === 'vcf') {
-		return tracks.find(t => t.typeId === 'vcf');
+	// Match by type (e.g. "variants" -> the VCF track, "genes" -> the gene track)
+	if (lowerName.includes('variant') || lowerName === 'vcf') {
+		return tracks.find(isVariantTrack);
 	}
-	if (lowerName === 'genes' || lowerName === 'gff3' || lowerName === 'gff') {
-		return tracks.find(t => t.typeId === 'gff3');
+	if (lowerName.includes('gene') || lowerName === 'gff3' || lowerName === 'gff') {
+		return tracks.find(isGeneTrack);
 	}
 
 	return undefined;
@@ -989,7 +1014,7 @@ function executeSelectQuery(
 	if (params.intersect) {
 		const intersectTrack = findTrackByName(tracks, params.intersect);
 		if (intersectTrack) {
-			const intersectItems = intersectTrack.typeId === 'vcf'
+			const intersectItems = isVariantTrack(intersectTrack)
 				? extractVariantsFromTracks([intersectTrack])
 				: extractGenesFromTracks([intersectTrack]);
 
