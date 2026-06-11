@@ -54,13 +54,14 @@ function parseViewportFromURL(): Viewport | null {
 	// Also support compact format: ?loc=chr17:7668421-7687490
 	const loc = params.get('loc');
 	if (loc) {
-		const match = loc.match(/^([^:]+):(\d+)-(\d+)$/);
+		const match = loc.match(/^([^:]+):([\d,]+)-([\d,]+)$/);
 		if (match) {
-			return {
-				chromosome: match[1],
-				start: parseInt(match[2], 10),
-				end: parseInt(match[3], 10)
-			};
+			const start = parseInt(match[2].replace(/,/g, ''), 10);
+			const end = parseInt(match[3].replace(/,/g, ''), 10);
+			// Same validation as the expanded ?chr&start&end form.
+			if (!isNaN(start) && !isNaN(end) && end > start) {
+				return { chromosome: match[1], start, end };
+			}
 		}
 	}
 
@@ -155,9 +156,14 @@ const viewportCenter = $derived(viewport.start + viewportWidth / 2);
 
 // Viewport actions
 function setViewport(newViewport: Viewport): void {
+	// Central guard: never let NaN/Infinity coordinates corrupt viewport state.
+	if (!isFinite(newViewport.start) || !isFinite(newViewport.end)) {
+		console.warn('Ignoring viewport update with non-finite coordinates:', newViewport);
+		return;
+	}
 	viewport.chromosome = newViewport.chromosome;
-	viewport.start = Math.max(0, newViewport.start);
-	viewport.end = Math.max(viewport.start + 1, newViewport.end);
+	viewport.start = Math.max(0, Math.round(newViewport.start));
+	viewport.end = Math.max(viewport.start + 1, Math.round(newViewport.end));
 	syncViewportToURL();
 }
 
@@ -166,13 +172,17 @@ function navigateTo(chromosome: string, start: number, end: number): void {
 }
 
 function pan(deltaPixels: number, pixelsPerBase: number): void {
+	// Can't pan without a valid pixel scale (0/NaN -> Infinity/NaN deltaBases).
+	if (!isFinite(pixelsPerBase) || pixelsPerBase === 0) return;
 	const deltaBases = Math.round(deltaPixels / pixelsPerBase);
+	if (!isFinite(deltaBases)) return;
 	const newStart = Math.max(0, viewport.start - deltaBases);
 	const newEnd = newStart + viewportWidth;
 	setViewport({ ...viewport, start: newStart, end: newEnd });
 }
 
 function zoom(factor: number, centerBase?: number): void {
+	if (!isFinite(factor) || factor <= 0) return; // invalid zoom factor
 	const center = centerBase ?? viewportCenter;
 	const newWidth = Math.max(1, Math.round(viewportWidth * factor));
 	const newStart = Math.max(0, Math.round(center - newWidth / 2));
@@ -206,11 +216,21 @@ function addHighlight(
 	options?: { color?: string; label?: string; persistent?: boolean }
 ): string {
 	const id = `highlight_${++highlightIdCounter}`;
+	// Normalize the range: swap inverted start/end, clamp to >= 0, ensure non-zero
+	// width — so overlap tests and goToHighlight can't misbehave on bad input.
+	let s = Math.min(start, end);
+	let e = Math.max(start, end);
+	if (!isFinite(s) || !isFinite(e)) {
+		s = 0;
+		e = 1;
+	}
+	s = Math.max(0, Math.round(s));
+	e = Math.max(s + 1, Math.round(e));
 	const region: HighlightRegion = {
 		id,
 		chromosome,
-		start,
-		end,
+		start: s,
+		end: e,
 		color: options?.color,
 		label: options?.label,
 		persistent: options?.persistent ?? false
