@@ -1,11 +1,11 @@
-# GQL Manual - GBetter Query Language
+# GQL Manual - gBeta Query Language
 
-GQL (GBetter Query Language) is a simple, reproducible query language for genome browser operations. GQL commands can be entered in two places:
+GQL (gBeta Query Language) is a simple, reproducible query language for genome browser operations. GQL commands can be entered in two places:
 
 - **Search Bar** (header) - Quick commands with basic pattern matching
 - **GQL Console** (bottom panel, `Cmd+\``) - Full GQL support with AI-powered natural language translation, editable queries, history, and saved queries
 
-When you type natural language, GBetter translates it to GQL, ensuring your queries are always reproducible and shareable. The GQL Console shows you the translated query before execution, so you can review and modify it.
+When you type natural language, gBeta translates it to GQL, ensuring your queries are always reproducible and shareable. The GQL Console shows you the translated query before execution, so you can review and modify it.
 
 ## Table of Contents
 
@@ -85,7 +85,7 @@ search gene MYC
 
 ### Built-in Gene Index
 
-GBetter includes coordinates for common genes:
+gBeta includes coordinates for common genes:
 
 | Gene | Location |
 |------|----------|
@@ -453,7 +453,7 @@ COUNT FEATURES WHERE type = 'exon'    # Number of exons
 
 ## Coordinate Formats
 
-GBetter accepts various coordinate formats:
+gBeta accepts various coordinate formats:
 
 | Format | Example | Notes |
 |--------|---------|-------|
@@ -468,7 +468,7 @@ All coordinates are **1-based, inclusive** following genomics convention.
 
 ## Natural Language Translation
 
-GBetter automatically translates natural language to GQL:
+gBeta automatically translates natural language to GQL:
 
 | Natural Language | GQL Translation |
 |------------------|-----------------|
@@ -493,7 +493,7 @@ GBetter automatically translates natural language to GQL:
 
 ## Error Handling
 
-If a query fails, GBetter provides helpful error messages:
+If a query fails, gBeta provides helpful error messages:
 
 | Error | Meaning | Solution |
 |-------|---------|----------|

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# GFF3 to BigBed Conversion Script for GBetter
+# GFF3 to BigBed Conversion Script for gBeta
 # Converts gene annotations to BigBed format for efficient HTTP Range queries
 #
 # Prerequisites:

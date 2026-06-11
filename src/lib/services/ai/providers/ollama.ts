@@ -7,6 +7,7 @@
 
 import type { AIProvider, AIModel, TranslationRequest, TranslationResponse } from '../types';
 import { buildSystemPrompt, buildUserMessage, parseAIResponse } from '../prompt';
+import { getMigrated } from '../../storage';
 
 const DEFAULT_OLLAMA_URL = 'http://localhost:11434';
 
@@ -46,7 +47,7 @@ const MODELS: AIModel[] = [
  */
 function getOllamaUrl(): string {
 	try {
-		const stored = localStorage.getItem('gbetter_ollama_url');
+		const stored = getMigrated('gbeta_ollama_url', 'gbetter_ollama_url');
 		return stored || DEFAULT_OLLAMA_URL;
 	} catch {
 		return DEFAULT_OLLAMA_URL;
@@ -58,7 +59,7 @@ function getOllamaUrl(): string {
  */
 export function setOllamaUrl(url: string): void {
 	try {
-		localStorage.setItem('gbetter_ollama_url', url);
+		localStorage.setItem('gbeta_ollama_url', url);
 	} catch {
 		// Ignore storage errors
 	}

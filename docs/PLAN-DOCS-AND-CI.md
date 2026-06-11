@@ -146,7 +146,7 @@
 
 1. **Create docs/README.md** (documentation index)
    ```markdown
-   # GBetter Documentation
+   # gBeta Documentation
 
    ## User Guides
    - [Getting Started](tutorials/01-getting-started.md)

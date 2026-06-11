@@ -1,4 +1,4 @@
-# GBetter Query Language (GQL) Specification
+# gBeta Query Language (GQL) Specification
 
 **Version:** 0.1.0
 **Status:** Phase 1 implemented (core navigation, SELECT, INTERSECT, WITHIN, COUNT)

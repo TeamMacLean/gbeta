@@ -1,30 +1,30 @@
 ##gff-version 3
 ##sequence-region chr17 7668421 7687550
 # TP53 gene structure (simplified)
-chr17	GBetter	gene	7668422	7687491	.	-	.	ID=TP53;Name=TP53;biotype=protein_coding
-chr17	GBetter	mRNA	7668422	7687491	.	-	.	ID=TP53-201;Parent=TP53;Name=TP53-201
-chr17	GBetter	exon	7687377	7687491	.	-	.	ID=TP53-201.exon1;Parent=TP53-201;Name=exon1
-chr17	GBetter	exon	7676381	7676622	.	-	.	ID=TP53-201.exon2;Parent=TP53-201;Name=exon2
-chr17	GBetter	exon	7675994	7676272	.	-	.	ID=TP53-201.exon3;Parent=TP53-201;Name=exon3
-chr17	GBetter	exon	7675053	7675236	.	-	.	ID=TP53-201.exon4;Parent=TP53-201;Name=exon4
-chr17	GBetter	exon	7674858	7674971	.	-	.	ID=TP53-201.exon5;Parent=TP53-201;Name=exon5
-chr17	GBetter	exon	7674180	7674290	.	-	.	ID=TP53-201.exon6;Parent=TP53-201;Name=exon6
-chr17	GBetter	exon	7673700	7673837	.	-	.	ID=TP53-201.exon7;Parent=TP53-201;Name=exon7
-chr17	GBetter	exon	7673534	7673608	.	-	.	ID=TP53-201.exon8;Parent=TP53-201;Name=exon8
-chr17	GBetter	exon	7670608	7670715	.	-	.	ID=TP53-201.exon9;Parent=TP53-201;Name=exon9
-chr17	GBetter	exon	7669608	7669690	.	-	.	ID=TP53-201.exon10;Parent=TP53-201;Name=exon10
-chr17	GBetter	exon	7668422	7669689	.	-	.	ID=TP53-201.exon11;Parent=TP53-201;Name=exon11
+chr17	gBeta	gene	7668422	7687491	.	-	.	ID=TP53;Name=TP53;biotype=protein_coding
+chr17	gBeta	mRNA	7668422	7687491	.	-	.	ID=TP53-201;Parent=TP53;Name=TP53-201
+chr17	gBeta	exon	7687377	7687491	.	-	.	ID=TP53-201.exon1;Parent=TP53-201;Name=exon1
+chr17	gBeta	exon	7676381	7676622	.	-	.	ID=TP53-201.exon2;Parent=TP53-201;Name=exon2
+chr17	gBeta	exon	7675994	7676272	.	-	.	ID=TP53-201.exon3;Parent=TP53-201;Name=exon3
+chr17	gBeta	exon	7675053	7675236	.	-	.	ID=TP53-201.exon4;Parent=TP53-201;Name=exon4
+chr17	gBeta	exon	7674858	7674971	.	-	.	ID=TP53-201.exon5;Parent=TP53-201;Name=exon5
+chr17	gBeta	exon	7674180	7674290	.	-	.	ID=TP53-201.exon6;Parent=TP53-201;Name=exon6
+chr17	gBeta	exon	7673700	7673837	.	-	.	ID=TP53-201.exon7;Parent=TP53-201;Name=exon7
+chr17	gBeta	exon	7673534	7673608	.	-	.	ID=TP53-201.exon8;Parent=TP53-201;Name=exon8
+chr17	gBeta	exon	7670608	7670715	.	-	.	ID=TP53-201.exon9;Parent=TP53-201;Name=exon9
+chr17	gBeta	exon	7669608	7669690	.	-	.	ID=TP53-201.exon10;Parent=TP53-201;Name=exon10
+chr17	gBeta	exon	7668422	7669689	.	-	.	ID=TP53-201.exon11;Parent=TP53-201;Name=exon11
 ##sequence-region chr17 43044295 43170300
 # BRCA1 gene structure (simplified - first few exons)
-chr17	GBetter	gene	43044296	43170246	.	-	.	ID=BRCA1;Name=BRCA1;biotype=protein_coding
-chr17	GBetter	mRNA	43044296	43170246	.	-	.	ID=BRCA1-201;Parent=BRCA1;Name=BRCA1-201
-chr17	GBetter	exon	43124016	43125483	.	-	.	ID=BRCA1-201.exon1;Parent=BRCA1-201;Name=exon1
-chr17	GBetter	exon	43115725	43115779	.	-	.	ID=BRCA1-201.exon2;Parent=BRCA1-201;Name=exon2
-chr17	GBetter	exon	43106455	43106533	.	-	.	ID=BRCA1-201.exon3;Parent=BRCA1-201;Name=exon3
-chr17	GBetter	exon	43104867	43104956	.	-	.	ID=BRCA1-201.exon4;Parent=BRCA1-201;Name=exon4
-chr17	GBetter	exon	43104121	43104261	.	-	.	ID=BRCA1-201.exon5;Parent=BRCA1-201;Name=exon5
-chr17	GBetter	exon	43099774	43099880	.	-	.	ID=BRCA1-201.exon6;Parent=BRCA1-201;Name=exon6
-chr17	GBetter	exon	43097243	43097289	.	-	.	ID=BRCA1-201.exon7;Parent=BRCA1-201;Name=exon7
-chr17	GBetter	exon	43095845	43095922	.	-	.	ID=BRCA1-201.exon8;Parent=BRCA1-201;Name=exon8
-chr17	GBetter	exon	43094743	43094860	.	-	.	ID=BRCA1-201.exon9;Parent=BRCA1-201;Name=exon9
-chr17	GBetter	exon	43091434	43091544	.	-	.	ID=BRCA1-201.exon10;Parent=BRCA1-201;Name=exon10
+chr17	gBeta	gene	43044296	43170246	.	-	.	ID=BRCA1;Name=BRCA1;biotype=protein_coding
+chr17	gBeta	mRNA	43044296	43170246	.	-	.	ID=BRCA1-201;Parent=BRCA1;Name=BRCA1-201
+chr17	gBeta	exon	43124016	43125483	.	-	.	ID=BRCA1-201.exon1;Parent=BRCA1-201;Name=exon1
+chr17	gBeta	exon	43115725	43115779	.	-	.	ID=BRCA1-201.exon2;Parent=BRCA1-201;Name=exon2
+chr17	gBeta	exon	43106455	43106533	.	-	.	ID=BRCA1-201.exon3;Parent=BRCA1-201;Name=exon3
+chr17	gBeta	exon	43104867	43104956	.	-	.	ID=BRCA1-201.exon4;Parent=BRCA1-201;Name=exon4
+chr17	gBeta	exon	43104121	43104261	.	-	.	ID=BRCA1-201.exon5;Parent=BRCA1-201;Name=exon5
+chr17	gBeta	exon	43099774	43099880	.	-	.	ID=BRCA1-201.exon6;Parent=BRCA1-201;Name=exon6
+chr17	gBeta	exon	43097243	43097289	.	-	.	ID=BRCA1-201.exon7;Parent=BRCA1-201;Name=exon7
+chr17	gBeta	exon	43095845	43095922	.	-	.	ID=BRCA1-201.exon8;Parent=BRCA1-201;Name=exon8
+chr17	gBeta	exon	43094743	43094860	.	-	.	ID=BRCA1-201.exon9;Parent=BRCA1-201;Name=exon9
+chr17	gBeta	exon	43091434	43091544	.	-	.	ID=BRCA1-201.exon10;Parent=BRCA1-201;Name=exon10

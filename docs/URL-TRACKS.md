@@ -1,6 +1,6 @@
 # Loading Remote Tracks from URLs
 
-GBetter supports loading genomic data tracks directly from URLs. This allows you to visualize data hosted on remote servers without downloading files locally.
+gBeta supports loading genomic data tracks directly from URLs. This allows you to visualize data hosted on remote servers without downloading files locally.
 
 ## Quick Start
 
@@ -41,7 +41,7 @@ Data file:  https://example.com/variants.vcf.gz
 Index file: https://example.com/variants.vcf.gz.tbi  (required)
 ```
 
-GBetter automatically looks for the index file by appending `.tbi` to the data URL.
+gBeta automatically looks for the index file by appending `.tbi` to the data URL.
 
 ### BAM/CRAM (Alignments)
 
@@ -52,7 +52,7 @@ Data file:  https://example.com/alignments.bam
 Index file: https://example.com/alignments.bam.bai  (required)
 ```
 
-GBetter automatically looks for the index file by appending `.bai` to the data URL.
+gBeta automatically looks for the index file by appending `.bai` to the data URL.
 
 **Note**: CRAM support is partial. CRAM files require a reference sequence for decoding, which is not yet implemented. Use BAM files for best results.
 

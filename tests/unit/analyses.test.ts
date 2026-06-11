@@ -46,7 +46,7 @@ describe('saved analyses (notebooks)', () => {
 	});
 
 	it('returns [] for corrupted (non-array) storage', () => {
-		localStorage.setItem('gbetter_saved_analyses', JSON.stringify({ not: 'array' }));
+		localStorage.setItem('gbeta_saved_analyses', JSON.stringify({ not: 'array' }));
 		expect(loadAnalyses()).toEqual([]);
 	});
 });

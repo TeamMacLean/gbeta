@@ -1,4 +1,4 @@
-# GBetter
+# gBeta
 
 A modern, lightweight genome browser. Fast, beautiful, AI-native.
 
@@ -48,7 +48,7 @@ All indexed formats above can also be loaded from URLs. The index file must be a
 
 ## Quick Start
 
-1. Open [GBetter](https://teammaclean.github.io/gbetter/) in your browser
+1. Open [gBeta](https://teammaclean.github.io/gbetter/) in your browser
 2. Gene tracks load automatically for the selected assembly
 3. Add your own data:
    - **Local files**: Drag & drop or use File tab in sidebar
@@ -65,7 +65,7 @@ All indexed formats above can also be loaded from URLs. The index file must be a
 
 ## Built-in Assemblies
 
-GBetter includes 27+ genome assemblies with automatic gene/transcript tracks:
+gBeta includes 27+ genome assemblies with automatic gene/transcript tracks:
 
 | Category | Assemblies |
 |----------|------------|
@@ -82,7 +82,7 @@ Reference sequences (2bit) are available for all assemblies, enabling nucleotide
 
 ## Themes & Accessibility
 
-GBetter is designed with accessibility in mind:
+gBeta is designed with accessibility in mind:
 
 - **Three themes**: Light (default, print-ready), Dark, High-Contrast
 - **Colorblind-safe palettes**: Set2, Dark2, Paired (all from ColorBrewer)
@@ -95,7 +95,7 @@ All themes and palettes are in Settings > Display tab.
 
 ## Search Bar vs GQL Console
 
-GBetter has two query interfaces:
+gBeta has two query interfaces:
 
 ### Search Bar (Header)
 
@@ -133,7 +133,7 @@ Your data never leaves your browser. Files are parsed locally using JavaScript.
 
 ### Option 2: Deploy Your Own Instance
 
-Fork GBetter to your GitHub account and deploy via GitHub Pages:
+Fork gBeta to your GitHub account and deploy via GitHub Pages:
 
 1. **Fork the repository**
 
@@ -195,9 +195,9 @@ Note: Update `svelte.config.js` to change the base path if not hosting at root.
 
 ---
 
-## GQL - GBetter Query Language
+## GQL - gBeta Query Language
 
-GBetter includes a simple, reproducible query language for genome browser operations. Natural language queries are automatically translated to GQL for reproducibility.
+gBeta includes a simple, reproducible query language for genome browser operations. Natural language queries are automatically translated to GQL for reproducibility.
 
 ### Basic Commands
 
@@ -227,7 +227,7 @@ See the [GQL Manual](docs/GQL-MANUAL.md) for complete documentation, or [GQL Exa
 
 ## AI Setup
 
-GBetter's AI features translate natural language into reproducible GQL commands. Choose your preferred AI backend:
+gBeta's AI features translate natural language into reproducible GQL commands. Choose your preferred AI backend:
 
 | Provider | Privacy | Cost |
 |----------|---------|------|

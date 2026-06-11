@@ -1,14 +1,14 @@
 # Gene Track Hosting
 
-GBetter automatically loads gene annotations for supported genomes. This document explains how gene tracks work and how to add support for new genomes.
+gBeta automatically loads gene annotations for supported genomes. This document explains how gene tracks work and how to add support for new genomes.
 
 ## How It Works
 
-When you select a genome assembly, GBetter checks if there's a known gene annotation source for that genome. If found, it loads genes on-demand as you navigate, fetching only the data needed for the current viewport via HTTP Range requests.
+When you select a genome assembly, gBeta checks if there's a known gene annotation source for that genome. If found, it loads genes on-demand as you navigate, fetching only the data needed for the current viewport via HTTP Range requests.
 
 ## Understanding the Tracks
 
-GBetter can display two types of annotation tracks: **Genes** and **Transcripts**. Not all assemblies have both.
+gBeta can display two types of annotation tracks: **Genes** and **Transcripts**. Not all assemblies have both.
 
 ### Genes Track
 
@@ -109,7 +109,7 @@ Different data sources use different chromosome naming conventions:
 - **Ensembl**: `1`, `2`, `X`
 - **NCBI**: `NC_000001.11`, `NC_000002.12`
 
-GBetter automatically maps between conventions. If your BigBed file uses non-standard names, add a mapping in `GENE_BIGBED_CHROMOSOME_MAP` in `src/lib/services/bigbed.ts`.
+gBeta automatically maps between conventions. If your BigBed file uses non-standard names, add a mapping in `GENE_BIGBED_CHROMOSOME_MAP` in `src/lib/services/bigbed.ts`.
 
 ## Technical Details
 

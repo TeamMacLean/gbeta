@@ -2,7 +2,7 @@
 
 **Last updated**: Session 23 (2026-01-22)
 
-This guide defines the style and structure for all GBetter tutorials. Follow it when creating or updating tutorials.
+This guide defines the style and structure for all gBeta tutorials. Follow it when creating or updating tutorials.
 
 ---
 
@@ -55,7 +55,7 @@ Every tutorial must follow this structure:
 ### Tone
 - Direct and friendly, not formal or condescending
 - Second person: "Click the **Settings** button" not "The user should click..."
-- Active voice: "GBetter loads the track" not "The track is loaded by GBetter"
+- Active voice: "gBeta loads the track" not "The track is loaded by gBeta"
 
 ### Length
 - As detailed as needed to teach the concept properly

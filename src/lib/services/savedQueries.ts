@@ -5,6 +5,7 @@
 
 import { browser } from '$app/environment';
 import type { QueryResult } from './queryLanguage';
+import { getMigrated } from './storage';
 
 export interface SavedQuery {
 	id: string;
@@ -24,8 +25,10 @@ export interface SavedAnalysis {
 	createdAt: number;
 }
 
-const STORAGE_KEY = 'gbetter_saved_queries';
-const ANALYSES_KEY = 'gbetter_saved_analyses';
+const STORAGE_KEY = 'gbeta_saved_queries';
+const ANALYSES_KEY = 'gbeta_saved_analyses';
+const LEGACY_STORAGE_KEY = 'gbetter_saved_queries';
+const LEGACY_ANALYSES_KEY = 'gbetter_saved_analyses';
 
 // Monotonic counter so rapid saves in the same millisecond don't collide.
 let idCounter = 0;
@@ -54,7 +57,7 @@ export function loadSavedQueries(): SavedQuery[] {
 	if (!browser) return [];
 
 	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
+		const stored = getMigrated(STORAGE_KEY, LEGACY_STORAGE_KEY);
 		if (stored) {
 			const parsed = JSON.parse(stored);
 			if (Array.isArray(parsed)) {
@@ -136,7 +139,7 @@ export function exportQueries(queries: SavedQuery[]): void {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	a.href = url;
-	a.download = `gbetter-queries-${new Date().toISOString().split('T')[0]}.gql`;
+	a.download = `gbeta-queries-${new Date().toISOString().split('T')[0]}.gql`;
 	a.click();
 	URL.revokeObjectURL(url);
 }
@@ -155,7 +158,7 @@ export function exportHistory(history: QueryResult[]): void {
 		.filter((h) => h.query?.valid && h.query.raw?.trim());
 
 	const header = [
-		'-- GBetter query history',
+		'-- gBeta query history',
 		`-- Exported: ${new Date().toISOString()}`,
 		`-- ${items.length} ${items.length === 1 ? 'query' : 'queries'}`,
 		''
@@ -180,7 +183,7 @@ export function exportHistory(history: QueryResult[]): void {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	a.href = url;
-	a.download = `gbetter-history-${new Date().toISOString().split('T')[0]}.gql`;
+	a.download = `gbeta-history-${new Date().toISOString().split('T')[0]}.gql`;
 	a.click();
 	URL.revokeObjectURL(url);
 }
@@ -271,7 +274,7 @@ export function importQueries(parsed: Array<{ name: string; gql: string; descrip
 export function loadAnalyses(): SavedAnalysis[] {
 	if (!browser) return [];
 	try {
-		const stored = localStorage.getItem(ANALYSES_KEY);
+		const stored = getMigrated(ANALYSES_KEY, LEGACY_ANALYSES_KEY);
 		if (stored) {
 			const parsed = JSON.parse(stored);
 			if (Array.isArray(parsed)) {

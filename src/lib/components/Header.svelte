@@ -90,7 +90,7 @@
 <header class="flex items-center gap-4 px-4 py-2 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)]">
 	<!-- Logo / Title -->
 	<div class="flex items-center gap-2">
-		<span class="text-xl font-bold text-[var(--color-accent)]">GBetter</span>
+		<span class="text-xl font-bold text-[var(--color-accent)]">gBeta</span>
 		<span class="text-xs text-[var(--color-text-muted)]">v0.1.0</span>
 	</div>
 

@@ -31,18 +31,18 @@ beforeEach(() => {
 
 describe('savedQueries — corrupted localStorage', () => {
 	it('loadSavedQueries returns [] when stored value is a non-array object (was a crash)', () => {
-		localStorage.setItem('gbetter_saved_queries', JSON.stringify({ id: 'x', gql: 'oops' }));
+		localStorage.setItem('gbeta_saved_queries', JSON.stringify({ id: 'x', gql: 'oops' }));
 		expect(loadSavedQueries()).toEqual([]);
 	});
 
 	it('loadSavedQueries returns [] on garbage JSON', () => {
-		localStorage.setItem('gbetter_saved_queries', '{not json');
+		localStorage.setItem('gbeta_saved_queries', '{not json');
 		expect(loadSavedQueries()).toEqual([]);
 	});
 
 	it('loadSavedQueries drops malformed entries from an array', () => {
 		localStorage.setItem(
-			'gbetter_saved_queries',
+			'gbeta_saved_queries',
 			JSON.stringify([{ id: 'a', name: 'ok', gql: 'NAVIGATE chr1:1-2', createdAt: 1 }, null, 42, { id: 'b' }])
 		);
 		const out = loadSavedQueries();
@@ -51,7 +51,7 @@ describe('savedQueries — corrupted localStorage', () => {
 	});
 
 	it('saveQuery does not throw when storage was corrupted (critical #0)', () => {
-		localStorage.setItem('gbetter_saved_queries', JSON.stringify({ not: 'an array' }));
+		localStorage.setItem('gbeta_saved_queries', JSON.stringify({ not: 'an array' }));
 		expect(() => saveQuery('Test', 'SELECT GENES')).not.toThrow();
 		const out = loadSavedQueries();
 		expect(out).toHaveLength(1);
@@ -74,7 +74,7 @@ describe('getQueryFromUrl — malformed encoding', () => {
 describe('loadAISettings — corrupted nested maps (#5)', () => {
 	it('coerces a null activeModels/apiKeys to objects so lookups do not crash', () => {
 		localStorage.setItem(
-			'gbetter_ai_settings',
+			'gbeta_ai_settings',
 			JSON.stringify({ activeProvider: 'anthropic', activeModels: null, apiKeys: null })
 		);
 		const s = loadAISettings();

@@ -124,7 +124,7 @@ test.describe('Theme Switching', () => {
 
 			// Verify localStorage has updated palette
 			const stored = await page.evaluate(() => {
-				const settings = localStorage.getItem('gbetter-theme');
+				const settings = localStorage.getItem('gbeta-theme');
 				return settings ? JSON.parse(settings) : null;
 			});
 			expect(stored?.palette).toBe('dark2');
@@ -150,7 +150,7 @@ test.describe('Theme Switching', () => {
 
 		// Set dark theme via localStorage
 		await page.evaluate(() => {
-			localStorage.setItem('gbetter-theme', JSON.stringify({ mode: 'dark', palette: 'set2' }));
+			localStorage.setItem('gbeta-theme', JSON.stringify({ mode: 'dark', palette: 'set2' }));
 		});
 		await page.reload();
 		await page.waitForTimeout(500);

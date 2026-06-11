@@ -1,4 +1,4 @@
-# GBetter Testing Plan
+# gBeta Testing Plan
 
 ## Overview
 

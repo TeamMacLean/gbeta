@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>GBetter - Genome Browser</title>
+	<title>gBeta - Genome Browser</title>
 	<meta name="description" content="A modern, lightweight genome browser with AI-powered navigation" />
 </svelte:head>
 

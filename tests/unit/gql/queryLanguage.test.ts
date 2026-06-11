@@ -1,5 +1,5 @@
 /**
- * GBetter Query Language (GQL) Unit Tests
+ * gBeta Query Language (GQL) Unit Tests
  */
 import { describe, it, expect } from 'vitest';
 import { parseQuery, translateNaturalLanguage, getCommandHelp, getAvailableGenes } from '$lib/services/queryLanguage';

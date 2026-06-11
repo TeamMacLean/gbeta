@@ -4,8 +4,10 @@
  */
 
 import { browser } from '$app/environment';
+import { getMigrated } from './storage';
 
-const STORAGE_KEY = 'gbetter_session';
+const STORAGE_KEY = 'gbeta_session';
+const LEGACY_STORAGE_KEY = 'gbetter_session';
 const STORAGE_VERSION = 1;
 
 export interface TrackMetadata {
@@ -60,7 +62,7 @@ export function loadSession(): SessionState | null {
 	if (!browser) return null;
 
 	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
+		const stored = getMigrated(STORAGE_KEY, LEGACY_STORAGE_KEY);
 		if (!stored) return null;
 
 		const session = JSON.parse(stored) as SessionState;

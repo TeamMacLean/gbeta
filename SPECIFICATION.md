@@ -1,4 +1,4 @@
-# GBetter - Genome Browser Specification
+# gBeta - Genome Browser Specification
 
 ## Vision
 A modern, lightweight genome browser that makes genomic data exploration fast, beautiful, and intelligent.
@@ -120,7 +120,7 @@ The AI query service uses a structured prompt to translate natural language to n
 
 **System Prompt Core:**
 ```
-You are a genomic navigation assistant for GBetter genome browser.
+You are a genomic navigation assistant for gBeta genome browser.
 Your role is to translate natural language queries into precise genomic coordinates.
 
 You have access to a gene index with names and coordinates for the current assembly (GRCh38/hg38).

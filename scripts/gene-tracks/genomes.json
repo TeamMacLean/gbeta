@@ -1,5 +1,5 @@
 {
-  "description": "Gene annotation sources for GBetter genome browser",
+  "description": "Gene annotation sources for gBeta genome browser",
   "r2_bucket": "gbetter-gene-tracks",
   "r2_public_url": "https://pub-cdedc141a021461d9db8432b0ec926d7.r2.dev",
   "genomes": [

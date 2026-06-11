@@ -19,7 +19,7 @@ test.describe('Sam the Student - First-time user journey', () => {
 		await page.goto('/');
 
 		// Should see the main UI elements without confusion
-		await expect(page.getByText('GBetter')).toBeVisible();
+		await expect(page.getByText('gBeta')).toBeVisible();
 		await expect(page.locator('canvas').first()).toBeVisible();
 
 		// Search bar should be obvious

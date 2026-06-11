@@ -95,7 +95,7 @@ describe('Phase 4: UI Controls Integration', () => {
 			store.setBamQuality('fast');
 
 			expect(localStorageMock.setItem).toHaveBeenCalledWith(
-				'gbetter-coverage-quality-bam',
+				'gbeta-coverage-quality-bam',
 				'fast'
 			);
 		});
@@ -103,8 +103,8 @@ describe('Phase 4: UI Controls Integration', () => {
 		test('should restore quality settings from localStorage', () => {
 			const localStorageMock = {
 				getItem: vi.fn().mockImplementation((key) => {
-					if (key === 'gbetter-coverage-quality-bam') return 'detailed';
-					if (key === 'gbetter-coverage-quality-bigwig') return 'fast';
+					if (key === 'gbeta-coverage-quality-bam') return 'detailed';
+					if (key === 'gbeta-coverage-quality-bigwig') return 'fast';
 					return null;
 				}),
 				setItem: vi.fn(),
@@ -115,8 +115,8 @@ describe('Phase 4: UI Controls Integration', () => {
 			// Create a new store instance to test restoration
 			// Note: This test might not work perfectly due to singleton pattern
 			// but it demonstrates the expected behavior
-			expect(localStorageMock.getItem('gbetter-coverage-quality-bam')).toBe('detailed');
-			expect(localStorageMock.getItem('gbetter-coverage-quality-bigwig')).toBe('fast');
+			expect(localStorageMock.getItem('gbeta-coverage-quality-bam')).toBe('detailed');
+			expect(localStorageMock.getItem('gbeta-coverage-quality-bigwig')).toBe('fast');
 		});
 
 		test('should handle track-type-specific settings', () => {

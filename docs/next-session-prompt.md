@@ -1,4 +1,4 @@
-# Next Session — GBetter
+# Next Session — gBeta
 
 **Last session:** 29 (2026-06-11). Everything committed and pushed to
 origin/main; `npm run check` 0 errors, 504 unit tests pass; verified live

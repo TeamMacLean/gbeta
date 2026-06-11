@@ -1,4 +1,4 @@
-# GBetter TODO - Road to v0.1.0
+# gBeta TODO - Road to v0.1.0
 
 ## Release Blockers (Must Have)
 
@@ -91,4 +91,4 @@
 3. Filter/Highlight commands (complete GQL)
 4. Quick keyboard shortcuts
 
-This would get GBetter to a solid v0.1.0 state.
+This would get gBeta to a solid v0.1.0 state.

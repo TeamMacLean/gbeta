@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Genome assembly definitions for GBetter. Add new assemblies here.",
+  "description": "Genome assembly definitions for gBeta. Add new assemblies here.",
   "assemblies": [
     {
       "id": "grch38",

@@ -15,6 +15,7 @@ import { anthropicProvider } from './providers/anthropic';
 import { openaiProvider } from './providers/openai';
 import { ollamaProvider } from './providers/ollama';
 import { browser } from '$app/environment';
+import { getMigrated } from '../storage';
 
 // Registry of available providers
 const providers: Map<string, AIProvider> = new Map([
@@ -23,7 +24,8 @@ const providers: Map<string, AIProvider> = new Map([
 	['ollama', ollamaProvider]
 ]);
 
-const SETTINGS_KEY = 'gbetter_ai_settings';
+const SETTINGS_KEY = 'gbeta_ai_settings';
+const LEGACY_SETTINGS_KEY = 'gbetter_ai_settings';
 
 /**
  * Load AI settings from localStorage
@@ -40,7 +42,7 @@ export function loadAISettings(): AISettings {
 	if (!browser) return DEFAULT_AI_SETTINGS;
 
 	try {
-		const stored = localStorage.getItem(SETTINGS_KEY);
+		const stored = getMigrated(SETTINGS_KEY, LEGACY_SETTINGS_KEY);
 		if (stored) {
 			const parsed = JSON.parse(stored) ?? {};
 			const settings: AISettings = { ...DEFAULT_AI_SETTINGS, ...parsed };

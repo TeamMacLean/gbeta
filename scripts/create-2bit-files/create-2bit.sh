@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Create 2bit reference sequence files for GBetter assemblies
+# Create 2bit reference sequence files for gBeta assemblies
 #
 # This script downloads FASTA files from NCBI/Ensembl and converts them to 2bit format
 # using UCSC's faToTwoBit tool.
@@ -148,7 +148,7 @@ get_all_ids() {
 }
 
 # Main
-echo "GBetter 2bit Reference File Generator"
+echo "gBeta 2bit Reference File Generator"
 echo "======================================"
 echo ""
 echo "Output directory: $OUTPUT_DIR"

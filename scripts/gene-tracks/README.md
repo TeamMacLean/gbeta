@@ -1,6 +1,6 @@
-# GBetter Gene Track Pipeline
+# gBeta Gene Track Pipeline
 
-This directory contains scripts to generate and host BigBed gene annotation files for GBetter.
+This directory contains scripts to generate and host BigBed gene annotation files for gBeta.
 
 ## Overview
 

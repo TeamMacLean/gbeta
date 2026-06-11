@@ -1,6 +1,6 @@
 # GQL Examples
 
-Practical examples of GBetter Query Language for common genomics tasks.
+Practical examples of gBeta Query Language for common genomics tasks.
 
 ## Table of Contents
 
@@ -415,7 +415,7 @@ Type what you want in plain English:
 - "zoom in"
 - "go to chromosome 17"
 
-GBetter will translate and show you the GQL command used.
+gBeta will translate and show you the GQL command used.
 
 ---
 

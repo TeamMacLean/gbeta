@@ -1,5 +1,5 @@
 /**
- * GBetter Query Language (GQL)
+ * gBeta Query Language (GQL)
  * A simple, reproducible query language for genome browser operations
  *
  * Syntax:

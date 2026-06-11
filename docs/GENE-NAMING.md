@@ -1,6 +1,6 @@
 # Gene Naming Conventions
 
-This document describes how GBetter extracts and displays gene identifiers from different annotation sources.
+This document describes how gBeta extracts and displays gene identifiers from different annotation sources.
 
 ## Terminology
 

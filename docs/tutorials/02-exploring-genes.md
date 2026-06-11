@@ -27,7 +27,7 @@ You want to know: **Which genes have variants, and are any clinically significan
 
 ## Step 1: Verify Gene Tracks Are Loaded
 
-GBetter automatically loads gene tracks for the selected assembly.
+gBeta automatically loads gene tracks for the selected assembly.
 
 ### Check the sidebar
 
@@ -91,7 +91,7 @@ For small VCF files (under a few MB), you can drag and drop an uncompressed `.vc
 
 ### VCF compatibility
 
-GBetter supports standard VCF format. Key fields used:
+gBeta supports standard VCF format. Key fields used:
 - CHROM, POS, ID, REF, ALT (required)
 - QUAL, FILTER, INFO (optional but useful)
 - Clinical significance (CLNSIG in INFO) for filtering
@@ -113,7 +113,7 @@ Type in the search bar:
 show me genes with variants
 ```
 
-GBetter translates this to GQL and shows results.
+gBeta translates this to GQL and shows results.
 
 ### GQL equivalent
 
@@ -331,7 +331,7 @@ list variants in GENENAME
 
 ### Start with questions
 
-Ask GBetter in natural language:
+Ask gBeta in natural language:
 - "What genes have variants?"
 - "Show me variants in BRCA1"
 - "Are there pathogenic variants?"
@@ -388,7 +388,7 @@ Use highlights to mark regions, then take screenshots or note coordinates for yo
 
 ## Summary
 
-Key points for variant analysis in GBetter:
+Key points for variant analysis in gBeta:
 
 1. **Gene tracks load automatically** - No need to find gene annotations
 2. **Load your VCF** - Drag & drop or paste URL for tabix-indexed files

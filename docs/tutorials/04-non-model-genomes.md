@@ -2,10 +2,10 @@
 
 > **Audience**: Domain experts working with any organism
 > **Time**: 20-30 minutes
-> **Prerequisites**: Basic GBetter navigation ([Tutorial 1](01-getting-started.md))
+> **Prerequisites**: Basic gBeta navigation ([Tutorial 1](01-getting-started.md))
 > **Last updated**: Session 23 (2026-01-22)
 
-GBetter is species-agnostic. Whether you study wheat pathogens, fruit flies, or marine bacteria, this tutorial shows you how to work with custom genome assemblies and non-standard chromosome names.
+gBeta is species-agnostic. Whether you study wheat pathogens, fruit flies, or marine bacteria, this tutorial shows you how to work with custom genome assemblies and non-standard chromosome names.
 
 ## What You'll Learn
 
@@ -38,9 +38,9 @@ Most examples use human:
 ### Non-human assemblies
 
 > [!NOTE]
-> GBetter includes 27+ built-in assemblies. Check the dropdown before loading custom chromosome sizes.
+> gBeta includes 27+ built-in assemblies. Check the dropdown before loading custom chromosome sizes.
 
-GBetter supports many organisms across all kingdoms of life, organized taxonomically in the assembly dropdown.
+gBeta supports many organisms across all kingdoms of life, organized taxonomically in the assembly dropdown.
 
 ---
 
@@ -55,7 +55,7 @@ GBetter supports many organisms across all kingdoms of life, organized taxonomic
 
 ### Built-in assemblies (27+)
 
-GBetter includes assemblies organized by category:
+gBeta includes assemblies organized by category:
 
 | Category | Assemblies |
 |----------|------------|
@@ -104,12 +104,12 @@ If your organism isn't listed, you have options.
 
 ### Option A: Infer from data
 
-Load your data file first, and GBetter will offer to create an assembly from the chromosomes it finds.
+Load your data file first, and gBeta will offer to create an assembly from the chromosomes it finds.
 
 1. Load your GFF3 or BED file
 2. If chromosomes don't match, a dialog appears
 3. Choose "Infer from data"
-4. GBetter creates an assembly from your file
+4. gBeta creates an assembly from your file
 
 ### Option B: Load chrom.sizes
 
@@ -168,7 +168,7 @@ If your data uses different names than the assembly:
 **Your file**: `1, 2, 3, X, Y`
 **Assembly expects**: `chr1, chr2, chr3, chrX, chrY`
 
-GBetter will warn you and offer to:
+gBeta will warn you and offer to:
 1. **Infer assembly** - Create new assembly from your data
 2. **Continue anyway** - Hope for partial matches
 
@@ -254,7 +254,7 @@ peaks.bed:     chromosome_7  ...
 
 ### Loading additional tracks
 
-Just drag and drop. GBetter uses your current assembly for all tracks.
+Just drag and drop. gBeta uses your current assembly for all tracks.
 
 ---
 

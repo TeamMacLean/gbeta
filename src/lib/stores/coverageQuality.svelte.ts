@@ -4,6 +4,8 @@
  * Manages user preferences for coverage quality settings with localStorage persistence
  */
 
+import { getMigrated } from '$lib/services/storage';
+
 export type CoverageQuality = 'fast' | 'medium' | 'detailed';
 
 export interface CoverageQualityStore {
@@ -15,6 +17,11 @@ export interface CoverageQualityStore {
 }
 
 const STORAGE_KEYS = {
+	bam: 'gbeta-coverage-quality-bam',
+	bigwig: 'gbeta-coverage-quality-bigwig'
+} as const;
+
+const LEGACY_KEYS = {
 	bam: 'gbetter-coverage-quality-bam',
 	bigwig: 'gbetter-coverage-quality-bigwig'
 } as const;
@@ -25,9 +32,9 @@ function isValidQuality(value: any): value is CoverageQuality {
 	return VALID_QUALITIES.includes(value);
 }
 
-function getStoredQuality(key: string, defaultQuality: CoverageQuality): CoverageQuality {
+function getStoredQuality(key: string, legacyKey: string, defaultQuality: CoverageQuality): CoverageQuality {
 	try {
-		const stored = localStorage.getItem(key);
+		const stored = getMigrated(key, legacyKey);
 		if (stored && isValidQuality(stored)) {
 			return stored;
 		}
@@ -59,8 +66,8 @@ class CoverageQualityStoreImpl implements CoverageQualityStore {
 
 	constructor() {
 		// Initialize from localStorage if available
-		this._bamQuality = getStoredQuality(STORAGE_KEYS.bam, 'medium');
-		this._bigwigQuality = getStoredQuality(STORAGE_KEYS.bigwig, 'medium');
+		this._bamQuality = getStoredQuality(STORAGE_KEYS.bam, LEGACY_KEYS.bam, 'medium');
+		this._bigwigQuality = getStoredQuality(STORAGE_KEYS.bigwig, LEGACY_KEYS.bigwig, 'medium');
 	}
 
 	get bamQuality(): CoverageQuality {

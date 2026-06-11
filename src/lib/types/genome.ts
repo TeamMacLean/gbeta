@@ -1,5 +1,5 @@
 /**
- * Core genomic types for GBetter
+ * Core genomic types for gBeta
  * All coordinates are 0-based, half-open internally
  */
 

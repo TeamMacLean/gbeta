@@ -2,7 +2,7 @@
 
 > **Audience**: Anyone working with large genomic datasets or shared data repositories
 > **Time**: 15-20 minutes
-> **Prerequisites**: Basic GBetter navigation ([Tutorial 1](01-getting-started.md))
+> **Prerequisites**: Basic gBeta navigation ([Tutorial 1](01-getting-started.md))
 > **Last updated**: Session 23 (2026-01-22)
 
 ## What You'll Learn
@@ -19,9 +19,9 @@
 
 Traditional genome browsers require you to download files before viewing them. For small annotation files, that works fine. But genomic data can be enormous - a single BAM file might be tens of gigabytes.
 
-GBetter supports **remote track loading**, which means you can view data directly from a URL without downloading the entire file. Here's why this matters:
+gBeta supports **remote track loading**, which means you can view data directly from a URL without downloading the entire file. Here's why this matters:
 
-**Efficiency**: GBetter only fetches the data for your current viewport. If you're looking at a 10kb region of chromosome 17, it doesn't need to download the other 99.99% of the genome.
+**Efficiency**: gBeta only fetches the data for your current viewport. If you're looking at a 10kb region of chromosome 17, it doesn't need to download the other 99.99% of the genome.
 
 **No storage required**: You don't need disk space for multi-gigabyte files. The data stays on the server.
 
@@ -69,7 +69,7 @@ Indexed formats fall into two categories:
 > [!IMPORTANT]
 > Index files must be at the same URL path: `file.bam` needs `file.bam.bai` alongside it.
 
-GBetter automatically looks for index files at the expected location. You only need to provide the URL to the data file.
+gBeta automatically looks for index files at the expected location. You only need to provide the URL to the data file.
 
 ---
 
@@ -82,7 +82,7 @@ Loading a remote track takes just a few clicks:
 3. Click the **+** button (or press Enter)
 4. Wait for the track to load
 
-The track appears in your track list once loaded. GBetter automatically detects the format from the file extension and fetches data for your current viewport.
+The track appears in your track list once loaded. gBeta automatically detects the format from the file extension and fetches data for your current viewport.
 
 ---
 
@@ -154,7 +154,7 @@ This layered view lets you correlate variants with gene annotations and see actu
 
 ## Working with Public Repositories
 
-Many organizations host genomic data that you can load directly into GBetter:
+Many organizations host genomic data that you can load directly into gBeta:
 
 **UCSC Genome Browser**: Extensive collection of annotation tracks
 - Base URL: `https://hgdownload.soe.ucsc.edu/goldenPath/`
@@ -228,7 +228,7 @@ Header set Access-Control-Allow-Origin "*"
 
 ### "Failed to load track"
 
-**Check the URL is accessible**: Try opening the URL directly in your browser. If you can't access it, GBetter can't either.
+**Check the URL is accessible**: Try opening the URL directly in your browser. If you can't access it, gBeta can't either.
 
 **Check CORS**: Open your browser's developer console (F12) and look for CORS errors. If you see "blocked by CORS policy", the server needs CORS headers.
 
@@ -236,11 +236,11 @@ Header set Access-Control-Allow-Origin "*"
 
 ### "Index not found"
 
-For BAM and tabix files, GBetter looks for the index at the expected location:
+For BAM and tabix files, gBeta looks for the index at the expected location:
 - `file.bam` + `file.bam.bai`
 - `file.vcf.gz` + `file.vcf.gz.tbi`
 
-Ensure the index file exists at that exact path. Some servers use `.bai` without the `.bam` prefix - GBetter expects `file.bam.bai`.
+Ensure the index file exists at that exact path. Some servers use `.bai` without the `.bam` prefix - gBeta expects `file.bam.bai`.
 
 ### "No features visible"
 
@@ -267,7 +267,7 @@ You've learned how to:
 - Configure CORS for self-hosted data
 - Troubleshoot common loading issues
 
-Remote track loading is one of GBetter's most powerful features. It lets you work with massive datasets efficiently and share views with collaborators instantly.
+Remote track loading is one of gBeta's most powerful features. It lets you work with massive datasets efficiently and share views with collaborators instantly.
 
 ---
 

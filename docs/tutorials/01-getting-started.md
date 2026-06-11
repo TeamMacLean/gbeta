@@ -7,7 +7,7 @@
 
 ## What You'll Learn
 
-- Understanding the GBetter interface
+- Understanding the gBeta interface
 - Navigating the genome (search, pan, zoom)
 - Loading local and remote data files
 - Using basic filters and highlights
@@ -15,9 +15,9 @@
 
 ---
 
-## Step 1: Opening GBetter
+## Step 1: Opening gBeta
 
-Open GBetter in your web browser. You'll see a clean interface with:
+Open gBeta in your web browser. You'll see a clean interface with:
 
 - **Header** (top): Search bar and navigation controls
 - **Sidebar** (left): Track list and file loading
@@ -33,7 +33,7 @@ The browser starts with a default view of chromosome 1 in the human genome.
 
 ## Step 2: Two Ways to Query
 
-GBetter provides two interfaces for entering commands: the **Search Bar** for quick tasks and the **GQL Console** for advanced work.
+gBeta provides two interfaces for entering commands: the **Search Bar** for quick tasks and the **GQL Console** for advanced work.
 
 ### Search Bar (Header)
 
@@ -83,11 +83,11 @@ Let's find TP53, a famous tumor suppressor gene often mutated in cancer.
 2. Type: `TP53`
 3. Press Enter
 
-GBetter navigates to chromosome 17 where TP53 is located. You should see the coordinate display change to something like `chr17:7,668,421-7,687,490`.
+gBeta navigates to chromosome 17 where TP53 is located. You should see the coordinate display change to something like `chr17:7,668,421-7,687,490`.
 
 ### What just happened?
 
-When you typed `TP53`, GBetter:
+When you typed `TP53`, gBeta:
 
 1. Recognized it as a gene name
 2. Looked up its coordinates (chr17:7668421-7687490)
@@ -153,7 +153,7 @@ Pan around to explore the region near TP53. What other genes are nearby?
 
 ## Step 6: Loading a Data File
 
-GBetter can display your own genomic data. Let's try loading a file.
+gBeta can display your own genomic data. Let's try loading a file.
 
 ### Supported formats
 
@@ -169,7 +169,7 @@ GBetter can display your own genomic data. Let's try loading a file.
 | Tabix GFF | .gff.gz | .gff.gz.tbi | Gene annotations |
 | Tabix BED | .bed.gz | .bed.gz.tbi | Intervals |
 
-These work both locally (drag and drop) and remotely (paste URL). GBetter only loads the data you're viewing, so even multi-gigabyte files open instantly.
+These work both locally (drag and drop) and remotely (paste URL). gBeta only loads the data you're viewing, so even multi-gigabyte files open instantly.
 
 > [!TIP]
 > For indexed files with external indexes (.bai, .tbi), select both files together when loading locally.
@@ -203,7 +203,7 @@ These are loaded entirely into memory - fine for files under a few MB, but use i
 
 **Option C: Drag and drop**
 
-1. Drag files from your computer onto the GBetter window
+1. Drag files from your computer onto the gBeta window
 2. For indexed files, drag both the data and index files together
 3. Drop anywhere on the canvas
 
@@ -274,7 +274,7 @@ clear highlights
 
 ## Step 9: Customizing Appearance
 
-GBetter offers multiple themes and color palettes.
+gBeta offers multiple themes and color palettes.
 
 ### Opening Settings
 
@@ -339,7 +339,7 @@ You've just loaded remote alignment data without downloading anything!
 <details>
 <summary>Why can't I find my gene?</summary>
 
-GBetter has a built-in index of common genes. If your gene isn't found:
+gBeta has a built-in index of common genes. If your gene isn't found:
 - Check the spelling
 - Try the official gene symbol (BRCA1, not "breast cancer gene")
 - Load a GFF3 file containing your gene annotations
@@ -379,7 +379,7 @@ Each track needs space. Try:
 ## Summary
 
 You now know how to:
-- Navigate the GBetter interface
+- Navigate the gBeta interface
 - Search for genes and navigate to coordinates
 - Zoom in/out and pan around the genome
 - Load local files via drag-and-drop or the File tab

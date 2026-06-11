@@ -2,7 +2,7 @@
 
 > **Audience**: Anyone analyzing sequencing data (RNA-seq, ChIP-seq, WGS, etc.)
 > **Time**: 25-35 minutes
-> **Prerequisites**: Basic GBetter navigation, understanding of sequencing concepts
+> **Prerequisites**: Basic gBeta navigation, understanding of sequencing concepts
 > **Last updated**: Session 23 (2026-01-22)
 
 ## What You'll Learn
@@ -34,7 +34,7 @@ Before loading alignment data, it helps to understand the two main formats:
 > [!TIP]
 > Use CRAM when storage and transfer size matter. Use BAM when you need maximum compatibility or don't have reference sequence available.
 
-GBetter supports both formats for local and remote files. For built-in assemblies, GBetter automatically provides the reference sequence needed for CRAM decoding.
+gBeta supports both formats for local and remote files. For built-in assemblies, gBeta automatically provides the reference sequence needed for CRAM decoding.
 
 ---
 
@@ -52,7 +52,7 @@ To load BAM or CRAM files from your computer:
 4. Navigate to a region to see your reads
 
 > [!IMPORTANT]
-> You must select both the alignment file and its index at the same time. Without the index, GBetter cannot efficiently fetch reads for specific regions.
+> You must select both the alignment file and its index at the same time. Without the index, gBeta cannot efficiently fetch reads for specific regions.
 
 ### Loading Remote Files
 
@@ -62,16 +62,16 @@ To load BAM or CRAM files from a URL:
 2. Paste the URL to your BAM or CRAM file
 3. Click **+** to add the track
 
-GBetter automatically looks for the index file at the same URL path (adding `.bai` or `.crai` to the filename). If your index is at a different location, the track will fail to load.
+gBeta automatically looks for the index file at the same URL path (adding `.bai` or `.crai` to the filename). If your index is at a different location, the track will fail to load.
 
 ---
 
 ## Understanding Zoom-Dependent Rendering
 
-GBetter automatically switches between three rendering modes based on your zoom level. This lets you see the most useful representation of your data at each scale.
+gBeta automatically switches between three rendering modes based on your zoom level. This lets you see the most useful representation of your data at each scale.
 
 > [!IMPORTANT]
-> GBetter automatically switches between coverage, block, and sequence rendering based on zoom level. You don't need to change any settings.
+> gBeta automatically switches between coverage, block, and sequence rendering based on zoom level. You don't need to change any settings.
 
 ### Coverage Mode (Zoomed Out)
 
@@ -135,11 +135,11 @@ These thresholds ensure you always see the most informative view at your current
 
 ## Reading CIGAR Strings
 
-CIGAR (Compact Idiosyncratic Gapped Alignment Report) describes how a read aligns to the reference sequence. Understanding CIGAR helps you interpret what GBetter displays.
+CIGAR (Compact Idiosyncratic Gapped Alignment Report) describes how a read aligns to the reference sequence. Understanding CIGAR helps you interpret what gBeta displays.
 
 ### Common CIGAR Operations
 
-| Code | Name | What it means | How GBetter shows it |
+| Code | Name | What it means | How gBeta shows it |
 |------|------|---------------|----------------------|
 | M | Match/Mismatch | Base aligned to reference | Normal letter (sequence mode) or block (block mode) |
 | I | Insertion | Extra bases in read not in reference | Green triangle marker |
@@ -158,14 +158,14 @@ Consider a CIGAR string `25M2I23M`. This describes a 50-base read that aligns as
 2. **2I**: Two extra bases are inserted - they exist in the read but not the reference
 3. **23M**: The next 23 bases match the reference
 
-In GBetter:
+In gBeta:
 - **Block mode**: You see a read with a small green triangle at position 25, marking where the insertion occurs
 - **Sequence mode**: You see all 50 nucleotides, with the two inserted bases visible at position 25
 
 <details>
 <summary>CIGAR Operation Reference</summary>
 
-| Code | Name | Meaning | Visual in GBetter |
+| Code | Name | Meaning | Visual in gBeta |
 |------|------|---------|-------------------|
 | M | Match/Mismatch | Aligned to reference | Normal block/letter |
 | I | Insertion | Extra bases in read | Green triangle |
@@ -299,17 +299,17 @@ Zoom out to coverage mode and examine the histogram:
 
 CRAM files offer significant space savings but require reference sequence to decode reads.
 
-### How GBetter Handles CRAM
+### How gBeta Handles CRAM
 
 When you load a CRAM file:
 
-1. GBetter recognizes the CRAM format
-2. For built-in assemblies (27+ genomes), GBetter automatically fetches the reference from 2bit files hosted on our servers
+1. gBeta recognizes the CRAM format
+2. For built-in assemblies (27+ genomes), gBeta automatically fetches the reference from 2bit files hosted on our servers
 3. Reads are decoded using the reference sequence
 4. Display is identical to BAM - you see the same three rendering modes
 
 > [!IMPORTANT]
-> CRAM files require reference sequence. GBetter auto-fetches from 2bit files for built-in assemblies.
+> CRAM files require reference sequence. gBeta auto-fetches from 2bit files for built-in assemblies.
 
 ### When to Use CRAM
 
@@ -322,7 +322,7 @@ CRAM is ideal when:
 ### Limitations
 
 > [!WARNING]
-> For custom assemblies not in GBetter's built-in list, CRAM decoding requires you to provide a 2bit reference file.
+> For custom assemblies not in gBeta's built-in list, CRAM decoding requires you to provide a 2bit reference file.
 
 Other considerations:
 - CRAM files may load slightly slower than BAM (reference fetch adds time)
@@ -341,7 +341,7 @@ Other considerations:
 
 **Check both strands**: Real variants typically appear in reads from both forward and reverse strands. Strand-specific artifacts are often errors.
 
-**Consider mapping quality**: GBetter shows higher mapping quality reads with more opacity. Faded reads are less reliably mapped.
+**Consider mapping quality**: gBeta shows higher mapping quality reads with more opacity. Faded reads are less reliably mapped.
 
 **Compare to known genes**: Load a gene annotation track alongside your alignments. This helps interpret variants in genomic context.
 

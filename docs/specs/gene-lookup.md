@@ -6,7 +6,7 @@
 
 ## Overview
 
-Add gene name lookup to GBetter, allowing users to navigate and query by gene symbol instead of coordinates. Gene names become aliases for coordinates within GQL.
+Add gene name lookup to gBeta, allowing users to navigate and query by gene symbol instead of coordinates. Gene names become aliases for coordinates within GQL.
 
 ## Core Concept
 

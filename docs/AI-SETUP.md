@@ -1,6 +1,6 @@
 # AI Setup Guide
 
-GBetter's AI features translate natural language queries into reproducible GQL commands. You can use cloud AI providers (Anthropic, OpenAI) or run everything locally with Ollama for complete privacy.
+gBeta's AI features translate natural language queries into reproducible GQL commands. You can use cloud AI providers (Anthropic, OpenAI) or run everything locally with Ollama for complete privacy.
 
 ## Quick Comparison
 
@@ -52,9 +52,9 @@ ollama serve
 
 This runs a local server at `http://localhost:11434`.
 
-### Step 4: Configure GBetter
+### Step 4: Configure gBeta
 
-1. Open GBetter in your browser
+1. Open gBeta in your browser
 2. Click the **Settings** icon in the header (gear icon)
 3. Under **AI Provider**, select **Ollama (Local)**
 4. Choose your model from the dropdown
@@ -88,9 +88,9 @@ Cloud-based AI using Claude models. Requires an API key and has per-use costs.
 4. Click **Create Key**
 5. Copy the key (starts with `sk-ant-`)
 
-### Step 2: Configure GBetter
+### Step 2: Configure gBeta
 
-1. Open GBetter in your browser
+1. Open gBeta in your browser
 2. Click the **Settings** icon in the header
 3. Under **AI Provider**, select **Anthropic (Claude)**
 4. Paste your API key
@@ -106,7 +106,7 @@ Anthropic charges per token (roughly per word):
 - Claude Sonnet 4: ~$3/million input tokens, ~$15/million output tokens
 - Claude 3.5 Haiku: ~$0.25/million input tokens, ~$1.25/million output tokens
 
-For typical GBetter queries, expect costs of fractions of a cent per query.
+For typical gBeta queries, expect costs of fractions of a cent per query.
 
 ---
 
@@ -122,9 +122,9 @@ Cloud-based AI using GPT models. Requires an API key and has per-use costs.
 4. Click **Create new secret key**
 5. Copy the key (starts with `sk-`)
 
-### Step 2: Configure GBetter
+### Step 2: Configure gBeta
 
-1. Open GBetter in your browser
+1. Open gBeta in your browser
 2. Click the **Settings** icon in the header
 3. Under **AI Provider**, select **OpenAI**
 4. Paste your API key
@@ -146,7 +146,7 @@ OpenAI charges per token:
 
 ### What Gets Sent to Cloud Providers
 
-When using Anthropic or OpenAI, GBetter sends:
+When using Anthropic or OpenAI, gBeta sends:
 - Your natural language query text
 - Current viewport location (chromosome, coordinates)
 - Track names and types (not the actual data)
@@ -173,11 +173,11 @@ You can switch providers at any time:
 3. Enter API key if needed
 4. Previous provider settings are preserved
 
-GBetter remembers your API keys and model preferences for each provider.
+gBeta remembers your API keys and model preferences for each provider.
 
 ---
 
-## Using AI in GBetter
+## Using AI in gBeta
 
 Once configured, use the search bar to enter natural language queries:
 
@@ -188,7 +188,7 @@ find variants with high impact
 filter to show only exons
 ```
 
-GBetter translates these to GQL commands, which you can:
+gBeta translates these to GQL commands, which you can:
 - See in the query history
 - Copy and share with colleagues
 - Re-run for reproducibility

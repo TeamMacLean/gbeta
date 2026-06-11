@@ -31,7 +31,7 @@ GQL ensures every action is recorded as a reproducible command.
 
 ## Step 1: URL State
 
-GBetter stores your viewport state in the URL.
+gBeta stores your viewport state in the URL.
 
 ### What's in the URL
 
@@ -61,7 +61,7 @@ When someone opens your URL, they see exactly the same genomic region.
 
 ## Step 1.5: Settings Persistence
 
-GBetter also persists your display preferences.
+gBeta also persists your display preferences.
 
 ### What's saved automatically
 
@@ -123,11 +123,11 @@ URL state currently captures **viewport only**. For full reproducibility:
 
 ## Step 3: GQL for Reproducibility
 
-Every action in GBetter can be expressed as GQL.
+Every action in gBeta can be expressed as GQL.
 
 ### Natural language to GQL
 
-When you type natural language, GBetter shows the GQL translation:
+When you type natural language, gBeta shows the GQL translation:
 
 ```
 You typed: "show me genes with variants"
@@ -187,7 +187,7 @@ Save your script as `my-analysis.gql` for future reference.
 
 ### Re-run analysis
 
-Paste commands into GBetter's search bar one at a time to reproduce your workflow.
+Paste commands into gBeta's search bar one at a time to reproduce your workflow.
 
 ---
 
@@ -284,7 +284,7 @@ Click "Export" to download results as:
 Copy coordinates to use in other tools:
 
 ```
-# From GBetter
+# From gBeta
 chr17:7668421-7687490
 
 # Use in samtools
@@ -336,7 +336,7 @@ Found 3 pathogenic variants in TP53:
 ### Include session information
 
 Record:
-- GBetter version
+- gBeta version
 - Date of analysis
 - Data file versions/sources
 - Genome assembly used
@@ -377,7 +377,7 @@ Create a reproducible analysis workflow:
 
 ### 1. Set up your session
 
-1. Open GBetter: https://teammaclean.github.io/gbetter/
+1. Open gBeta: https://teammaclean.github.io/gbetter/
 2. Set theme to **Light** (Settings > Display) for publication-ready screenshots
 3. Select assembly **GRCh38**
 
@@ -513,7 +513,7 @@ For complex state, URLs can get long:
 
 ## Summary
 
-Reproducibility in GBetter:
+Reproducibility in gBeta:
 
 | What | How |
 |------|-----|

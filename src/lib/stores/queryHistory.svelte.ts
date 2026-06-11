@@ -5,9 +5,11 @@
 
 import type { QueryResult } from '$lib/services/queryLanguage';
 import { browser } from '$app/environment';
+import { getMigrated } from '$lib/services/storage';
 
 const MAX_HISTORY = 50;
-const STORAGE_KEY = 'gbetter_query_history';
+const STORAGE_KEY = 'gbeta_query_history';
+const LEGACY_STORAGE_KEY = 'gbetter_query_history';
 
 // Reactive state
 let history = $state<QueryResult[]>([]);
@@ -19,7 +21,7 @@ function loadHistory(): void {
 	if (!browser) return;
 
 	try {
-		const stored = localStorage.getItem(STORAGE_KEY);
+		const stored = getMigrated(STORAGE_KEY, LEGACY_STORAGE_KEY);
 		if (stored) {
 			const parsed = JSON.parse(stored);
 			// Keep only well-formed entries so corrupted storage can't crash

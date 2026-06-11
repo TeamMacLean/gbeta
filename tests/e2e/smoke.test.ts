@@ -17,7 +17,7 @@ test.describe('Smoke Tests', () => {
 
 		await page.goto('/');
 
-		await expect(page).toHaveTitle(/GBetter/i);
+		await expect(page).toHaveTitle(/gBeta/i);
 		await expect(page.locator('header')).toBeVisible();
 
 		const criticalErrors = errors.filter(e =>
@@ -48,8 +48,8 @@ test.describe('Smoke Tests', () => {
 	test('header contains navigation elements', async ({ page }) => {
 		await page.goto('/');
 
-		// GBetter logo
-		await expect(page.getByText('GBetter')).toBeVisible();
+		// gBeta logo
+		await expect(page.getByText('gBeta')).toBeVisible();
 
 		// Assembly selector button
 		await expect(page.locator('button').filter({ hasText: /GRCh|hg/i }).first()).toBeVisible();

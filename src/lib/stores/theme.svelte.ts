@@ -7,6 +7,7 @@
 
 import { browser } from '$app/environment';
 import { PALETTES, type PaletteName, type Palette } from '$lib/services/palette';
+import { getMigrated } from '$lib/services/storage';
 
 // =============================================================================
 // TYPES
@@ -23,7 +24,8 @@ interface ThemeSettings {
 // CONSTANTS
 // =============================================================================
 
-const STORAGE_KEY = 'gbetter-theme';
+const STORAGE_KEY = 'gbeta-theme';
+const LEGACY_STORAGE_KEY = 'gbetter-theme';
 const DEFAULT_SETTINGS: ThemeSettings = {
 	mode: 'light',
 	palette: 'set2',
@@ -39,7 +41,7 @@ let paletteName = $state<PaletteName>(DEFAULT_SETTINGS.palette);
 
 // Initialize from localStorage if in browser
 if (browser) {
-	const stored = localStorage.getItem(STORAGE_KEY);
+	const stored = getMigrated(STORAGE_KEY, LEGACY_STORAGE_KEY);
 	if (stored) {
 		try {
 			const settings: ThemeSettings = JSON.parse(stored);

@@ -30,7 +30,7 @@ You need to check peak quality and promoter overlap.
 
 ### Automatic tracks
 
-GBetter loads gene/transcript tracks automatically. You should see:
+gBeta loads gene/transcript tracks automatically. You should see:
 - **Transcripts** in the sidebar
 
 ### Load your analysis files
@@ -50,7 +50,7 @@ You should see your tracks in the sidebar below the automatic gene tracks.
 
 ## Step 2: SELECT Query Anatomy
 
-The SELECT query is GBetter's most powerful command.
+The SELECT query is gBeta's most powerful command.
 
 ### Basic syntax
 

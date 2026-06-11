@@ -25,7 +25,7 @@ Different situations call for different visual settings:
 - **Accessibility**: High-contrast for visual impairments
 - **Colorblindness**: Specific palettes that work for everyone
 
-GBetter provides flexible theming so you can work comfortably in any context.
+gBeta provides flexible theming so you can work comfortably in any context.
 
 ---
 
@@ -42,7 +42,7 @@ GBetter provides flexible theming so you can work comfortably in any context.
 
 ## Theme Modes
 
-GBetter offers three themes, each designed for specific use cases.
+gBeta offers three themes, each designed for specific use cases.
 
 ### Light (Default)
 
@@ -51,7 +51,7 @@ GBetter offers three themes, each designed for specific use cases.
 - **Best for**: Print, publications, daytime use
 - Screenshots are publication-ready
 
-This is GBetter's default theme. It provides the highest contrast for printed materials and works well in bright environments.
+This is gBeta's default theme. It provides the highest contrast for printed materials and works well in bright environments.
 
 ### Dark
 
@@ -146,7 +146,7 @@ Choose the style that matches your visual preference or matches the conventions 
 
 ## Accessibility
 
-GBetter is designed with accessibility in mind.
+gBeta is designed with accessibility in mind.
 
 ### Color Vision Deficiency
 
@@ -156,7 +156,7 @@ All palettes work for:
 - **Tritanopia** (blue-blind)
 
 > [!NOTE]
-> GBetter uses shape (chevrons, arrows) not just color to indicate strand direction.
+> gBeta uses shape (chevrons, arrows) not just color to indicate strand direction.
 
 We use **shape and position**, not just color, to convey information:
 - Strand direction shown by chevrons/arrows
@@ -281,7 +281,7 @@ Settings: Light theme, Set2 palette
 - [ ] Switch to **High-Contrast** theme
 - [ ] Navigate around the genome
 - [ ] Notice the bold borders and maximum contrast
-- [ ] This is how GBetter looks for users who need accessibility features
+- [ ] This is how gBeta looks for users who need accessibility features
 
 ---
 

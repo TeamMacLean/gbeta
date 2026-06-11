@@ -1,7 +1,7 @@
 /**
  * GQL Coverage Query Syntax Tests
  *
- * Tests parsing and execution of coverage queries in the GBetter Query Language.
+ * Tests parsing and execution of coverage queries in the gBeta Query Language.
  * Follows TDD approach for extending GQL with coverage support.
  */
 import { describe, test, expect } from 'vitest';

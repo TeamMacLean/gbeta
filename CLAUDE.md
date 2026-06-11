@@ -1,4 +1,4 @@
-# CLAUDE.md - GBetter Genome Browser
+# CLAUDE.md - gBeta Genome Browser
 
 ## Project Overview
 A modern, lightweight genome browser. Fast, beautiful, AI-native.
