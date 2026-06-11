@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseAIResponse } from '$lib/services/ai/prompt';
+import { parseAIResponse, buildUserMessage } from '$lib/services/ai/prompt';
+import type { BrowserContext } from '$lib/services/ai/types';
 
 describe('parseAIResponse', () => {
 	it('splits the GQL command from a REASON summary', () => {
@@ -32,5 +33,35 @@ describe('parseAIResponse', () => {
 			type: 'error',
 			content: 'cannot translate'
 		});
+	});
+
+	it('accumulates multiple REASON lines instead of dropping all but the last', () => {
+		const r = parseAIResponse('NAVIGATE BRCA1\nREASON: first thought.\nREASON: refined.');
+		expect(r.content).toBe('NAVIGATE BRCA1');
+		expect(r.reasoning).toBe('first thought. refined.');
+	});
+});
+
+describe('buildUserMessage — track context bounds', () => {
+	const ctx = (tracks: BrowserContext['tracks']): BrowserContext => ({
+		tracks,
+		viewport: { chromosome: 'chr1', start: 0, end: 1000 },
+		knownGenes: []
+	});
+
+	it('caps the track list and notes how many more there are', () => {
+		const tracks = Array.from({ length: 45 }, (_, i) => ({
+			name: `t${i}`,
+			type: 'bed' as const,
+			featureCount: 1
+		}));
+		const msg = buildUserMessage('list genes', ctx(tracks));
+		expect(msg).toMatch(/and 15 more tracks/);
+		expect(msg).not.toContain('"t40"'); // beyond the cap, not listed
+	});
+
+	it('labels empty track names instead of emitting "" ', () => {
+		const msg = buildUserMessage('x', ctx([{ name: '', type: 'bed', featureCount: 1 }]));
+		expect(msg).toContain('(unnamed track)');
 	});
 });

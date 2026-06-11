@@ -162,15 +162,21 @@ export function buildUserMessage(input: string, context: BrowserContext): string
 	parts.push(`Current view: ${context.viewport.chromosome}:${context.viewport.start}-${context.viewport.end}`)
 	parts.push('(Only use this if user says "here", "in view", "current view", etc.)\n');
 
-	// Loaded tracks
+	// Loaded tracks — cap the list so a session with many tracks can't blow up
+	// the prompt token count.
 	if (context.tracks.length > 0) {
+		const MAX_TRACKS = 30;
 		parts.push('Loaded tracks:');
-		for (const track of context.tracks) {
-			let trackDesc = `- "${track.name}" (${track.type}, ${track.featureCount} features)`;
+		for (const track of context.tracks.slice(0, MAX_TRACKS)) {
+			const name = track.name?.trim() || '(unnamed track)';
+			let trackDesc = `- "${name}" (${track.type}, ${track.featureCount} features)`;
 			if (track.sampleFeatures && track.sampleFeatures.length > 0) {
 				trackDesc += ` - contains: ${track.sampleFeatures.slice(0, 5).join(', ')}`;
 			}
 			parts.push(trackDesc);
+		}
+		if (context.tracks.length > MAX_TRACKS) {
+			parts.push(`...and ${context.tracks.length - MAX_TRACKS} more tracks`);
 		}
 		parts.push('');
 	} else {
@@ -228,7 +234,8 @@ export function parseAIResponse(response: string): {
 	for (const line of trimmed.split('\n')) {
 		const m = line.match(/^\s*REASON:\s*(.*)$/i);
 		if (m) {
-			reasoning = m[1].trim();
+			// Accumulate (don't overwrite) if the model emits more than one REASON.
+			reasoning = reasoning ? `${reasoning} ${m[1].trim()}` : m[1].trim();
 		} else {
 			gqlLines.push(line);
 		}

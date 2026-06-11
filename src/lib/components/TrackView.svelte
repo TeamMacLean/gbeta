@@ -1513,6 +1513,16 @@
 				{ pixelsPerBase }
 			);
 
+			// The viewport may have moved while we were fetching (async/network).
+			// Don't paint this region's coverage over a now-different view.
+			if (
+				viewport.current.chromosome !== chr ||
+				viewport.current.start !== start ||
+				viewport.current.end !== end
+			) {
+				return;
+			}
+
 			const colors = getCanvasColors();
 			const coverage = coverageData.coverage;
 

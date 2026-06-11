@@ -70,10 +70,13 @@
 		return [...cmdMatches, ...geneMatches.map(g => `search gene ${g}`)];
 	});
 
+	let searchSeq = 0;
+
 	async function handleSearch(event: Event) {
 		event.preventDefault();
 		if (!query.trim()) return;
 
+		const seq = ++searchSeq;
 		isLoading = true;
 		showSuggestions = false;
 		note = null;
@@ -85,6 +88,9 @@
 			const outcome = await routeQuery(query, assembly.current, aiContext, {
 				exec: (q) => executeQueryWithTracks(q, tracks.all)
 			});
+			// A newer search was started while we awaited — drop this stale result
+			// so it can't overwrite the newer one.
+			if (seq !== searchSeq) return;
 			const result = outcome.result;
 
 			note = outcome.note ?? null;
@@ -110,7 +116,8 @@
 				query = '';
 			}
 		} finally {
-			isLoading = false;
+			// Only the latest in-flight search controls the loading state.
+			if (seq === searchSeq) isLoading = false;
 		}
 	}
 
