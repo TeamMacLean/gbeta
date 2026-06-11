@@ -557,7 +557,14 @@ Step-by-step guides in [`docs/`](docs/):
 7. [Reading Alignments](docs/tutorials/07-reading-alignments.md) — BAM/CRAM, CIGAR
 8. [Customizing Themes](docs/tutorials/08-customizing-themes.md) — themes, palettes, accessibility
 
-Reference docs: the [GQL Manual](docs/GQL-MANUAL.md), [GQL Examples](docs/GQL-EXAMPLES.md), and the [AI Setup Guide](docs/AI-SETUP.md).
+**Reference:**
+
+- [GQL Manual](docs/GQL-MANUAL.md) — the complete query-language reference
+- [GQL Examples](docs/GQL-EXAMPLES.md) — practical query recipes
+- [AI Setup Guide](docs/AI-SETUP.md) — configure Ollama / Anthropic / OpenAI
+- [Loading Remote Tracks](docs/URL-TRACKS.md) — URLs, indexes, and CORS in depth
+- [Gene Naming Conventions](docs/GENE-NAMING.md) — how gene IDs are extracted and displayed
+- [Gene Track Hosting](docs/GENE-TRACKS.md) — how built-in gene tracks load, and adding new genomes
 
 ---
 
