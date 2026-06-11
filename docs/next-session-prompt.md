@@ -1,52 +1,44 @@
 # Next Session — GBetter
 
-**Last session:** 28 (2026-06-11) — adversarial "bomb testing" + hardening.
-Everything is committed locally (8 fix batches); `npm run check` 0 errors, 472
-unit tests pass, live smoke test clean (no JS errors). **Check whether the bomb-
-test commits are pushed.**
+**Last session:** 29 (2026-06-11). All work committed locally; `npm run check`
+0 errors, 487 unit tests pass, live smoke tests clean. **Check whether the latest
+commits are pushed.**
 
-## What happened (session 28)
-A multi-agent find→verify workflow swept 8 surfaces and confirmed **46 real bugs**
-(2 critical, 21 high, 15 medium, 8 low). Fixed in 8 themed batches, each with
-regression tests:
+## Recently completed
+- **Adversarial bomb-test sweep** (session 28): 46 confirmed bugs fixed across 8
+  surfaces (persistence, parsers, GQL engine, viewport, gene lookup, coverage,
+  concurrency, AI) with regression tests.
+- **Retired KNOWN_GENES** (session 28): SEARCH/WITHIN/FIND resolve gene names via
+  real tracks + the lookup API; getAvailableGenes uses loaded tracks.
+- **The four follow-ups (session 29):**
+  1. Parser-keyword gap — `show me…`/`find …` prose now reaches the AI instead
+     of being swallowed as a junk list query.
+  2. Cross-assembly chromosome normalization — loaded-track feature chromosomes
+     are normalized to the assembly convention (bare "1" -> chr1, accessions kept).
+  3. Named notebook analyses — save a history as a named, re-runnable analysis
+     (Analyses tab in the GQL console; runs queries in order through the engine).
+  4. Conversational AI panel — floating multi-turn chat (AIChat.svelte); the AI
+     runs queries via the shared engine or asks clarifying follow-ups, with
+     conversation history threaded to the provider.
 
-1. Persistence — corrupted localStorage / malformed `?gql=` no longer crash
-   (Array.isArray validation, safeSetItem, decode guard, null activeModels).
-2. Track parsers — GFF3 no longer dies on one bad %-escape; bedGraph rejects
-   non-integer coords; BED12 block-count validation; VCF empty-ALT + UCSC-only
-   chr prefix.
-3. GQL engine — `filter score>=100` keeps the operator; WHERE/WITHIN on
-   unknown field/target now surface a note instead of silent-empty.
-4. Viewport — NaN/Infinity guards (zoom/pan/setViewport), inverted-range
-   normalization (highlights), `?loc=` validation + commas.
-5-6. Gene lookup + coverage — multi-locus genes return all positions;
-   isCoordinate validates start<end; max-pool coverage downsampling (peaks);
-   strategy NaN guard.
-7-8. Concurrency + AI — SearchBar request-sequence guard; TrackView stale-paint
-   guard; parseAIResponse multi-REASON; capped AI track context.
+## To verify with an API key (couldn't test headless)
+- The conversational AI panel ("Ask AI" button, bottom-right) end-to-end: a
+  multi-turn exchange with a clarification follow-up, and a query that runs and
+  lands in history.
 
-New test files: persistence-robustness, parser-robustness, gql-robustness,
-viewport-robustness, robustness-gene-coverage, ai-prompt (extended).
+## Open / possible next directions
+- Persist the AI chat thread (currently in-memory per session).
+- Let the user save an AI-chat exchange as a notebook analysis.
+- Surface the chat panel from the console too (single AI entry point).
+- Richer GQL for the analysis-engine vision (aggregations, joins, export of
+  result sets).
 
-## Deliberately deferred (low value / non-bugs)
-- LIMIT negative silently ignored; ORDER BY unknown field (JS sort is stable);
-  formatCoordinate inverted display; pan past chromosome end; FILTER value with
-  spaces; quote-strip balance; lowercase KNOWN_GENES match. None affect
-  correctness materially.
-
-## Open follow-ups (from before, still valid)
-1. Retire the hardcoded `KNOWN_GENES` map (redundant with real gene lookup).
-2. Command-keyword parser gap (`show me…`/`go to…` short-circuit before the AI).
-3. Conversational AI panel; named "notebook" analyses (history `.gql` export exists).
-4. Cross-assembly chromosome-name normalization at the track-validation layer
-   (parsers intentionally keep raw names now; a bare "1" VCF on a non-UCSC
-   assembly still won't auto-match — this is the right place to fix it).
-
-## Recipes
+## Recipes / gotchas
 - Verify live: `npm run dev` (5173) + a Playwright driver via
-  `node_modules/playwright`. `page.evaluate(() => import('/src/lib/services/...'))`
+  `node_modules/playwright`; `page.evaluate(() => import('/src/lib/services/...'))`
   hits real modules/APIs.
-- Tests: `npx vitest run --exclude '**/real-bam-performance.test.ts'` (that one
-  needs network to a 673MB BAM).
-- jsdom here has no real localStorage — see persistence-robustness.test.ts for the
-  in-memory mock + `vi.mock('$app/environment', () => ({ browser: true }))`.
+- Tests: `npx vitest run --exclude '**/real-bam-performance.test.ts'`.
+- jsdom here has no real localStorage and `File` lacks `.text()` — see
+  persistence-robustness / track-chromosome-normalization tests for the mocks
+  (`vi.mock('$app/environment', () => ({ browser: true }))`, in-memory storage,
+  `{ name, text: async () => ... } as unknown as File`).
