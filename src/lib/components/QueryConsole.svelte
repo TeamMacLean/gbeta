@@ -29,7 +29,11 @@
 		importQueries,
 		generateQueryUrl,
 		getQueryFromUrl,
-		type SavedQuery
+		loadAnalyses,
+		saveAnalysis,
+		deleteAnalysis,
+		type SavedQuery,
+		type SavedAnalysis
 	} from '$lib/services/savedQueries';
 	import { formatCoordinate } from '$lib/types/genome';
 	import { onMount } from 'svelte';
@@ -60,18 +64,24 @@
 	let currentResults = $state<ListResultItem[]>([]);
 	let currentResultTitle = $state('');
 
-	// Saved queries
+	// Saved queries + analyses
 	let savedQueries = $state<SavedQuery[]>([]);
-	let historyTab = $state<'history' | 'saved'>('history');
+	let analyses = $state<SavedAnalysis[]>([]);
+	let historyTab = $state<'history' | 'saved' | 'analyses'>('history');
+	let runningAnalysis = $state<string | null>(null);
+	// Inline "save current history as analysis" dialog
+	let showSaveAnalysisDialog = $state(false);
+	let saveAnalysisName = $state('');
 	let showSaveDialog = $state(false);
 	let savingQueryGql = $state(''); // The GQL being saved from history
 	let saveQueryName = $state('');
 	let saveQueryDescription = $state('');
 	let fileInputEl: HTMLInputElement;
 
-	// Load saved queries on mount and check URL for query
+	// Load saved queries + analyses on mount and check URL for query
 	onMount(() => {
 		savedQueries = loadSavedQueries();
+		analyses = loadAnalyses();
 
 		// Check if there's a query in the URL
 		const urlQuery = getQueryFromUrl();
@@ -219,37 +229,63 @@
 		}
 	}
 
-	async function executeGql() {
-		if (!gqlInput.trim() || gqlInput.startsWith('#')) return;
-
-		// Run through the shared engine: resolves gene names, executes GQL with
-		// track awareness (SELECT/INTERSECT/WITHIN over loaded data), and can fall
-		// through to the AI for free text — the same path the search bar uses.
-		const outcome = await routeQuery(gqlInput, assembly.current, aiContext, {
+	// Run one query string through the shared engine (gene resolution, track-aware
+	// execution, AI fallback). Shared by the Execute button and analysis replay.
+	async function runOneQuery(gql: string, opts?: { natural?: string; reasoning?: string }) {
+		const outcome = await routeQuery(gql, assembly.current, aiContext, {
 			exec: (q) => executeQueryWithTracks(q, tracks.all),
 			trackGenes: new Set(getAvailableGenes(tracks.all).map((q) => q.toUpperCase()))
 		});
 		const result = outcome.result;
-
-		// Carry the NL + reasoning from the translate step into the shared history.
-		if (lastTranslation?.natural) result.naturalLanguage = lastTranslation.natural;
-		if (lastTranslation?.reasoning) result.reasoning = lastTranslation.reasoning;
+		if (opts?.natural) result.naturalLanguage = opts.natural;
+		if (opts?.reasoning) result.reasoning = opts.reasoning;
 		else if (outcome.naturalLanguage) result.naturalLanguage = outcome.naturalLanguage;
-
 		if (outcome.chosen) highlightGene(outcome.chosen);
 		queryHistory.addToHistory(result);
-
-		// Handle results
 		if (result.showResultPanel && result.results) {
 			currentResults = result.results;
 			currentResultTitle = result.message;
 		}
+		return result;
+	}
 
+	async function executeGql() {
+		if (!gqlInput.trim() || gqlInput.startsWith('#')) return;
+		await runOneQuery(gqlInput, { natural: lastTranslation?.natural, reasoning: lastTranslation?.reasoning });
 		// Reset GQL state but keep naturalInput for reference
 		gqlInput = '';
 		showTranslation = false;
 		pendingQuery = null;
 		lastTranslation = null;
+	}
+
+	// --- Analyses ("notebooks") ---
+	function refreshAnalyses() {
+		analyses = loadAnalyses();
+	}
+
+	function handleSaveAnalysis() {
+		const queries = queryHistory.items
+			.filter((i) => i.query?.valid && i.query.raw?.trim())
+			.map((i) => i.query.raw)
+			.reverse(); // chronological
+		if (saveAnalysisName.trim() && queries.length > 0) {
+			saveAnalysis(saveAnalysisName, queries);
+			refreshAnalyses();
+		}
+		showSaveAnalysisDialog = false;
+		saveAnalysisName = '';
+	}
+
+	async function runAnalysis(a: SavedAnalysis) {
+		runningAnalysis = a.id;
+		try {
+			for (const q of a.queries) {
+				await runOneQuery(q);
+			}
+		} finally {
+			runningAnalysis = null;
+		}
 	}
 
 	function navigateToResult(item: ListResultItem) {
@@ -488,6 +524,19 @@
 							<span class="ml-1 text-[10px]">({savedQueries.length})</span>
 						{/if}
 					</button>
+					<button
+						onclick={() => historyTab = 'analyses'}
+						class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+						class:text-[var(--color-accent)]={historyTab === 'analyses'}
+						class:border-b-2={historyTab === 'analyses'}
+						class:border-[var(--color-accent)]={historyTab === 'analyses'}
+						class:text-[var(--color-text-muted)]={historyTab !== 'analyses'}
+					>
+						Analyses
+						{#if analyses.length > 0}
+							<span class="ml-1 text-[10px]">({analyses.length})</span>
+						{/if}
+					</button>
 				</div>
 
 				<!-- Save dialog (shown inline when saving from history) -->
@@ -534,6 +583,9 @@
 							</div>
 						{:else}
 							<div class="flex justify-end gap-3 px-2 py-1">
+								<button onclick={() => { showSaveAnalysisDialog = true; saveAnalysisName = ''; }} class="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-accent)]" title="Save this history as a named, re-runnable analysis">
+									Save analysis
+								</button>
 								<button onclick={() => exportHistory(queryHistory.items)} class="text-[10px] text-[var(--color-text-muted)] hover:text-emerald-400" title="Export history as a re-runnable .gql script">
 									Export .gql
 								</button>
@@ -541,6 +593,18 @@
 									Clear all
 								</button>
 							</div>
+							{#if showSaveAnalysisDialog}
+								<div class="p-2 bg-[var(--color-bg-tertiary)] border-b border-[var(--color-border)] flex gap-1">
+									<input
+										type="text"
+										bind:value={saveAnalysisName}
+										placeholder="Analysis name"
+										class="flex-1 px-2 py-1 text-xs bg-[var(--color-bg-primary)] border border-[var(--color-border)] rounded text-[var(--color-text-primary)]"
+									/>
+									<button onclick={handleSaveAnalysis} disabled={!saveAnalysisName.trim()} class="px-2 py-0.5 text-[10px] bg-[var(--color-accent)] text-white rounded disabled:opacity-50">Save</button>
+									<button onclick={() => { showSaveAnalysisDialog = false; saveAnalysisName = ''; }} class="px-2 py-0.5 text-[10px] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] rounded">Cancel</button>
+								</div>
+							{/if}
 							{#each queryHistory.items as item}
 								<div class="px-2 py-1.5 border-b border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)] group">
 									<div class="flex items-center justify-between">
@@ -577,7 +641,7 @@
 								</div>
 							{/each}
 						{/if}
-					{:else}
+					{:else if historyTab === 'saved'}
 						<!-- Saved tab content -->
 						{#if savedQueries.length === 0}
 							<div class="p-3 text-[10px] text-[var(--color-text-muted)] text-center">
@@ -633,6 +697,37 @@
 								/>
 							</label>
 						</div>
+					{:else}
+						<!-- Analyses tab content (named, re-runnable notebooks) -->
+						{#if analyses.length === 0}
+							<div class="p-3 text-[10px] text-[var(--color-text-muted)] text-center">
+								No saved analyses. Run some queries, then "Save analysis" on the History tab.
+							</div>
+						{:else}
+							{#each analyses as a}
+								<div class="px-2 py-1.5 border-b border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)] group">
+									<div class="flex items-center justify-between">
+										<span class="text-xs font-medium text-[var(--color-text-primary)] truncate">{a.name}</span>
+										<div class="flex items-center gap-1">
+											<button
+												onclick={() => runAnalysis(a)}
+												disabled={runningAnalysis !== null}
+												class="px-1.5 py-0.5 text-[10px] bg-[var(--color-accent)] text-white rounded disabled:opacity-50"
+												title="Run all {a.queries.length} queries in order"
+											>
+												{runningAnalysis === a.id ? 'Running…' : 'Run'}
+											</button>
+											<button onclick={() => { deleteAnalysis(a.id); refreshAnalyses(); }} class="p-0.5 text-[var(--color-text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100" title="Delete">
+												<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+												</svg>
+											</button>
+										</div>
+									</div>
+									<div class="text-[10px] text-[var(--color-text-muted)]">{a.queries.length} queries</div>
+								</div>
+							{/each}
+						{/if}
 					{/if}
 				</div>
 			</div>

@@ -15,7 +15,23 @@ export interface SavedQuery {
 	lastUsedAt?: number;
 }
 
+/** A named, re-runnable sequence of GQL queries (an analysis "notebook"). */
+export interface SavedAnalysis {
+	id: string;
+	name: string;
+	description?: string;
+	queries: string[];
+	createdAt: number;
+}
+
 const STORAGE_KEY = 'gbetter_saved_queries';
+const ANALYSES_KEY = 'gbetter_saved_analyses';
+
+// Monotonic counter so rapid saves in the same millisecond don't collide.
+let idCounter = 0;
+function uid(prefix: string): string {
+	return `${prefix}_${Date.now()}_${idCounter++}`;
+}
 
 /** Write to localStorage, swallowing quota/serialization errors. Returns success. */
 function safeSetItem(key: string, value: unknown): boolean {
@@ -63,7 +79,7 @@ export function saveQuery(name: string, gql: string, description?: string): Save
 	const queries = loadSavedQueries();
 
 	const newQuery: SavedQuery = {
-		id: `query_${Date.now()}`,
+		id: uid('query'),
 		name,
 		gql,
 		description,
@@ -245,6 +261,51 @@ export function importQueries(parsed: Array<{ name: string; gql: string; descrip
 	}
 
 	return imported;
+}
+
+// ---------------------------------------------------------------------------
+// Saved analyses ("notebooks") — a named, ordered list of GQL queries
+// ---------------------------------------------------------------------------
+
+/** Load saved analyses; returns [] for missing/corrupted storage. */
+export function loadAnalyses(): SavedAnalysis[] {
+	if (!browser) return [];
+	try {
+		const stored = localStorage.getItem(ANALYSES_KEY);
+		if (stored) {
+			const parsed = JSON.parse(stored);
+			if (Array.isArray(parsed)) {
+				return parsed.filter(
+					(a): a is SavedAnalysis =>
+						a && typeof a === 'object' && typeof a.name === 'string' && Array.isArray(a.queries)
+				);
+			}
+		}
+	} catch (e) {
+		console.warn('Failed to load saved analyses:', e);
+	}
+	return [];
+}
+
+/** Save a new analysis (skips empty query lists). */
+export function saveAnalysis(name: string, queries: string[], description?: string): SavedAnalysis | null {
+	const cleaned = queries.map((q) => q.trim()).filter(Boolean);
+	if (!name.trim() || cleaned.length === 0) return null;
+	const analysis: SavedAnalysis = {
+		id: uid('analysis'),
+		name: name.trim(),
+		description: description?.trim() || undefined,
+		queries: cleaned,
+		createdAt: Date.now()
+	};
+	const analyses = loadAnalyses();
+	analyses.unshift(analysis);
+	safeSetItem(ANALYSES_KEY, analyses);
+	return analysis;
+}
+
+export function deleteAnalysis(id: string): void {
+	safeSetItem(ANALYSES_KEY, loadAnalyses().filter((a) => a.id !== id));
 }
 
 /**
