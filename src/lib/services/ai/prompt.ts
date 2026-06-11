@@ -40,10 +40,23 @@ SELECT GENES INTERSECT variants WHERE count < 3  -- Genes with fewer than 3
 \`\`\`
 After INTERSECT, each gene has a \`count\` field (number of overlapping features).
 Filter it with numeric comparisons: \`WHERE count = 1\`, \`count < 3\`, \`count >= 5\`.
-There are NO aggregate functions (MIN, MAX, AVG, SUM) and no GROUP BY — never
-write \`WHERE count = MIN\`. For "the minimum/maximum/most/fewest", just run
-\`SELECT GENES INTERSECT <variants>\`; the result list is ranked by count, so the
-user reads the top (most) or bottom (fewest).
+
+### Aggregates
+Wrap a numeric field in an aggregate function right after SELECT to get a single
+answer over the result set:
+\`\`\`
+SELECT MIN(count) GENES INTERSECT variants   -- fewest variants in any gene
+SELECT MAX(count) GENES INTERSECT variants   -- most variants in any gene
+SELECT AVG(count) GENES INTERSECT variants   -- mean variants per gene
+SELECT SUM(count) GENES INTERSECT variants   -- total
+SELECT COUNT(qual) VARIANTS                   -- how many have a qual value
+\`\`\`
+Functions: MIN, MAX, AVG (= MEAN), SUM, COUNT. The field must be numeric (e.g.
+\`count\` after INTERSECT, or \`qual\`/\`score\`/\`length\`). MIN/MAX also report which
+rows hit the extreme (clickable). There is no GROUP BY, but INTERSECT already
+groups variants per gene — so "min/max/average variants per gene" = an aggregate
+over \`SELECT GENES INTERSECT <variants>\`. Use this for "what's the
+minimum/maximum/average/total…"; never write \`WHERE count = MIN\`.
 
 ### WHERE Conditions
 \`\`\`
@@ -168,6 +181,13 @@ Response: COUNT VARIANTS
 
 User: "count variants on chr17"
 Response: COUNT VARIANTS IN chr17
+
+User: "what's the fewest variants in any gene?" (a variant track is loaded)
+Response: SELECT MIN(count) GENES INTERSECT cancer-variants
+REASON: Aggregating the per-gene overlap count from INTERSECT and taking the minimum.
+
+User: "average number of variants per gene here"
+Response: SELECT AVG(count) GENES INTERSECT cancer-variants IN VIEW
 
 User: "find genes on chromosome 17 with high impact variants"
 Response: SELECT GENES INTERSECT variants WHERE impact = 'HIGH' IN chr17`;

@@ -82,4 +82,25 @@ describe('WHERE count filters genes by INTERSECT overlap count', () => {
 	it('filters with >=', () => {
 		expect(r('SELECT GENES INTERSECT variants WHERE count >= 2').results?.map((x) => x.name)).toEqual(['G1']);
 	});
+
+	it('MIN(count) reports the minimum and the achieving gene', () => {
+		const res = r('SELECT MIN(count) GENES INTERSECT variants');
+		expect(res.message).toMatch(/MIN\(count\) = 1/);
+		expect(res.results?.map((x) => x.name)).toEqual(['G2']); // G2 has 1
+	});
+	it('MAX(count) reports the maximum', () => {
+		const res = r('SELECT MAX(count) GENES INTERSECT variants');
+		expect(res.message).toMatch(/MAX\(count\) = 2/);
+		expect(res.results?.map((x) => x.name)).toEqual(['G1']);
+	});
+	it('AVG and SUM over the per-gene counts', () => {
+		expect(r('SELECT AVG(count) GENES INTERSECT variants').message).toMatch(/AVG\(count\) = 1\.5/);
+		expect(r('SELECT SUM(count) GENES INTERSECT variants').message).toMatch(/SUM\(count\) = 3/);
+	});
+	it('explains when the aggregate field is absent (no INTERSECT)', () => {
+		expect(r('SELECT MIN(count) GENES').message).toMatch(/no numeric "count"/i);
+	});
+	it('does not let a track name containing "gene" hijack the SELECT target', () => {
+		expect(parseQuery('SELECT VARIANTS FROM human-genes-complex').params).toMatchObject({ what: 'variants' });
+	});
 });

@@ -43,6 +43,8 @@ export interface SelectParams {
 	inRegion?: 'view' | 'chromosome' | { chromosome: string; start?: number; end?: number };
 	orderBy?: { field: string; direction: 'ASC' | 'DESC' };
 	limit?: number;
+	/** Aggregate over the result set, e.g. SELECT MIN(count) GENES INTERSECT variants */
+	aggregate?: { fn: 'min' | 'max' | 'avg' | 'sum' | 'count'; field: string };
 }
 
 export interface WhereClause {
@@ -309,23 +311,32 @@ export function parseQuery(input: string): ParsedQuery {
  * SELECT GENES/VARIANTS/FEATURES [FROM track] [INTERSECT track] [WHERE conditions] [IN region/VIEW]
  */
 function parseSelectQuery(raw: string): ParsedQuery {
-	const upperRaw = raw.toUpperCase();
+	// Optional aggregate prefix: SELECT MIN(count) GENES ...
+	let aggregate: SelectParams['aggregate'];
+	const aggMatch = raw.match(/SELECT\s+(MIN|MAX|AVG|MEAN|SUM|COUNT)\s*\(\s*(\w+)\s*\)/i);
+	if (aggMatch) {
+		const fn = aggMatch[1].toLowerCase();
+		aggregate = { fn: (fn === 'mean' ? 'avg' : fn) as NonNullable<SelectParams['aggregate']>['fn'], field: aggMatch[2].toLowerCase() };
+	}
 
-	// Determine what we're selecting
+	// Determine what we're selecting — the keyword right after SELECT (and after
+	// an optional aggregate function), so a track name containing "gene" can't
+	// hijack it.
 	let what: SelectParams['what'] = 'features';
-	if (upperRaw.includes('SELECT GENES') || upperRaw.includes('SELECT GENE')) {
-		what = 'genes';
-	} else if (upperRaw.includes('SELECT VARIANTS') || upperRaw.includes('SELECT VARIANT')) {
-		what = 'variants';
-	} else if (upperRaw.includes('SELECT REGIONS') || upperRaw.includes('SELECT REGION')) {
-		what = 'regions';
-	} else if (upperRaw.includes('SELECT FEATURES') || upperRaw.includes('SELECT FEATURE')) {
-		what = 'features';
-	} else if (upperRaw.includes('SELECT *') || upperRaw.includes('SELECT ALL')) {
-		what = 'all';
+	const whatMatch = raw.match(
+		/SELECT\s+(?:(?:MIN|MAX|AVG|MEAN|SUM|COUNT)\s*\([^)]*\)\s+)?(\*|GENES?|VARIANTS?|REGIONS?|FEATURES?|ALL)/i
+	);
+	if (whatMatch) {
+		const w = whatMatch[1].toUpperCase();
+		if (w.startsWith('GENE')) what = 'genes';
+		else if (w.startsWith('VARIANT')) what = 'variants';
+		else if (w.startsWith('REGION')) what = 'regions';
+		else if (w.startsWith('FEATURE')) what = 'features';
+		else what = 'all'; // * or ALL
 	}
 
 	const params: SelectParams = { what };
+	if (aggregate) params.aggregate = aggregate;
 
 	// Track/target names may be quoted (the AI often quotes them) and may contain
 	// spaces/hyphens — accept "quoted", 'quoted', or a bare token, then unquote.
@@ -1168,6 +1179,70 @@ function executeSelectQuery(
 		if (unknownFields.length > 0) {
 			title += ` — note: no results have field(s) ${[...new Set(unknownFields)].join(', ')}`;
 		}
+	}
+
+	// Apply aggregate (MIN/MAX/AVG/SUM/COUNT over the filtered set). Returns a
+	// scalar; for MIN/MAX we also surface the achieving rows so they stay
+	// clickable.
+	if (params.aggregate) {
+		const { fn, field } = params.aggregate;
+		const fieldValue = (item: ListResultItem): number => {
+			if (field === 'length') return item.end - item.start;
+			if (field === 'start' || field === 'end') return item[field];
+			const raw = item.details?.[field] ?? (item as unknown as Record<string, unknown>)[field];
+			return Number(raw);
+		};
+		const valued = results
+			.map((item) => ({ item, value: fieldValue(item) }))
+			.filter((v) => !isNaN(v.value));
+
+		if (fn === 'count') {
+			return {
+				success: true,
+				query,
+				message: `COUNT(${field}) = ${valued.length} — ${title}`,
+				timestamp,
+				showResultPanel: false,
+				results: []
+			};
+		}
+
+		if (valued.length === 0) {
+			return {
+				success: true,
+				query,
+				message: `${fn.toUpperCase()}(${field}): no numeric "${field}" values${params.intersect ? '' : ' (did you mean to INTERSECT a track to get a count?)'} — ${title}`,
+				timestamp,
+				showResultPanel: false,
+				results: []
+			};
+		}
+
+		const nums = valued.map((v) => v.value);
+		let value: number;
+		let achieving: ListResultItem[] = [];
+		if (fn === 'min') {
+			value = Math.min(...nums);
+			achieving = valued.filter((v) => v.value === value).map((v) => v.item);
+		} else if (fn === 'max') {
+			value = Math.max(...nums);
+			achieving = valued.filter((v) => v.value === value).map((v) => v.item);
+		} else if (fn === 'sum') {
+			value = nums.reduce((a, b) => a + b, 0);
+		} else {
+			// avg
+			value = Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 100) / 100;
+		}
+
+		const where = `over ${valued.length} ${params.what}`;
+		return {
+			success: true,
+			query,
+			message: `${fn.toUpperCase()}(${field}) = ${value} ${where}${achieving.length ? ` — ${achieving.map((a) => a.name).slice(0, 5).join(', ')}${achieving.length > 5 ? '…' : ''}` : ''}`,
+			timestamp,
+			showResultPanel: achieving.length > 0,
+			results: achieving
+		};
 	}
 
 	// Apply ORDER BY
