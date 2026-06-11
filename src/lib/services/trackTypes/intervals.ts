@@ -51,9 +51,22 @@ function parseBed(content: string): ParseResult<BedFeature> {
 		if (fields.length >= 12) {
 			const blockCount = parseInt(fields[9], 10);
 			if (!isNaN(blockCount) && blockCount > 0) {
-				feature.blockCount = blockCount;
-				feature.blockSizes = fields[10].split(',').filter(s => s).map(s => parseInt(s, 10));
-				feature.blockStarts = fields[11].split(',').filter(s => s).map(s => parseInt(s, 10));
+				const blockSizes = fields[10].split(',').filter(s => s).map(s => parseInt(s, 10));
+				const blockStarts = fields[11].split(',').filter(s => s).map(s => parseInt(s, 10));
+				// Only accept block annotations that are internally consistent — a
+				// mismatched count would mis-draw the feature's exons.
+				if (
+					blockSizes.length === blockCount &&
+					blockStarts.length === blockCount &&
+					blockSizes.every(n => !isNaN(n)) &&
+					blockStarts.every(n => !isNaN(n))
+				) {
+					feature.blockCount = blockCount;
+					feature.blockSizes = blockSizes;
+					feature.blockStarts = blockStarts;
+				} else {
+					errors.push(`Line ${i + 1}: BED12 blockCount (${blockCount}) does not match blockSizes/blockStarts`);
+				}
 			}
 		}
 

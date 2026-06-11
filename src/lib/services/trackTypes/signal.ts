@@ -26,11 +26,17 @@ function parseBedGraph(content: string): ParseResult<SignalFeature> {
 			continue;
 		}
 
+		// Coordinates must be plain non-negative integers — parseInt would
+		// silently truncate "100.5" to 100 and "1e2" to 1.
+		if (!/^\d+$/.test(fields[1]) || !/^\d+$/.test(fields[2])) {
+			errors.push(`Line ${i + 1}: coordinates must be integers`);
+			continue;
+		}
 		const start = parseInt(fields[1], 10);
 		const end = parseInt(fields[2], 10);
 		const value = parseFloat(fields[3]);
 
-		if (isNaN(start) || isNaN(end) || isNaN(value) || start < 0 || end <= start) {
+		if (isNaN(start) || isNaN(end) || !isFinite(value) || start < 0 || end <= start) {
 			errors.push(`Line ${i + 1}: Invalid data`);
 			continue;
 		}

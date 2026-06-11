@@ -224,12 +224,19 @@ function parseGff3(content: string): ParseResult<GeneModelFeature> {
 			continue;
 		}
 
-		// Parse attributes
+		// Parse attributes. Split on the FIRST '=' only (values may contain '='),
+		// and never let a single malformed %-escape crash the whole track load.
 		const attrs: Record<string, string> = {};
 		for (const pair of attrStr.split(';')) {
-			const [key, value] = pair.split('=');
-			if (key && value) {
-				attrs[key.trim()] = decodeURIComponent(value.trim());
+			const eq = pair.indexOf('=');
+			if (eq === -1) continue; // bare key with no value
+			const key = pair.slice(0, eq).trim();
+			const rawValue = pair.slice(eq + 1).trim();
+			if (!key) continue;
+			try {
+				attrs[key] = decodeURIComponent(rawValue);
+			} catch {
+				attrs[key] = rawValue; // malformed URL-encoding: keep the raw value
 			}
 		}
 

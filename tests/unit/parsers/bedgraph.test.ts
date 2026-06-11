@@ -150,7 +150,7 @@ chr1\t200\t300\t2.0
 		it('reports error for invalid start coordinate', () => {
 			const result = parse('chr1\tabc\t200\t1.0');
 			expect(result.features).toHaveLength(0);
-			expect(result.errors[0]).toContain('Invalid data');
+			expect(result.errors[0]).toMatch(/integer|invalid/i);
 		});
 
 		it('reports error for invalid end coordinate', () => {

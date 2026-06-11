@@ -47,6 +47,12 @@ function parseVcf(content: string): ParseResult<VariantFeature> {
 			continue;
 		}
 
+		// REF/ALT must be present. ALT may be '.' (no alternate allele) but not empty.
+		if (!ref || !altStr || altStr.trim() === '') {
+			errors.push(`Line ${i + 1}: missing REF/ALT`);
+			continue;
+		}
+
 		const alt = altStr.split(',');
 		const end = pos + ref.length;
 
@@ -61,7 +67,14 @@ function parseVcf(content: string): ParseResult<VariantFeature> {
 
 		features.push({
 			id: id !== '.' ? id : `var_${featureId++}`,
-			chromosome: chrom.startsWith('chr') ? chrom : `chr${chrom}`,
+			// Only add a 'chr' prefix for UCSC-style names (1-22, X, Y, M, MT).
+			// Blindly prepending broke accessions (NC_000913.3 -> chrNC_000913.3).
+			// Cross-assembly name normalization (e.g. bare "1" on a non-UCSC
+			// assembly) is a track-validation-layer concern, not a per-parser hack.
+			chromosome:
+				!chrom.startsWith('chr') && /^([0-9]+|[XYM]|MT)$/i.test(chrom)
+					? `chr${chrom}`
+					: chrom,
 			start: pos,
 			end,
 			name: id !== '.' ? id : `${ref}>${alt[0]}`,
