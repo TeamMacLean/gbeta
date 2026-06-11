@@ -21,7 +21,12 @@ function loadHistory(): void {
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
 		if (stored) {
-			history = JSON.parse(stored);
+			const parsed = JSON.parse(stored);
+			// Keep only well-formed entries so corrupted storage can't crash
+			// addToHistory / rendering / export downstream.
+			history = Array.isArray(parsed)
+				? parsed.filter((r) => r && typeof r === 'object' && r.query && typeof r.query.raw === 'string')
+				: [];
 		}
 	} catch (error) {
 		console.warn('Failed to load query history:', error);

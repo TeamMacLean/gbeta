@@ -41,8 +41,17 @@ export function loadAISettings(): AISettings {
 	try {
 		const stored = localStorage.getItem(SETTINGS_KEY);
 		if (stored) {
-			const parsed = JSON.parse(stored);
+			const parsed = JSON.parse(stored) ?? {};
 			const settings: AISettings = { ...DEFAULT_AI_SETTINGS, ...parsed };
+			// A stored `null`/non-object for these nested maps (corrupted storage)
+			// would crash translateToGQL's `activeModels[provider]` lookup. Coerce
+			// to the defaults merged with whatever valid object was stored.
+			settings.activeModels =
+				parsed.activeModels && typeof parsed.activeModels === 'object'
+					? { ...DEFAULT_AI_SETTINGS.activeModels, ...parsed.activeModels }
+					: { ...DEFAULT_AI_SETTINGS.activeModels };
+			settings.apiKeys =
+				parsed.apiKeys && typeof parsed.apiKeys === 'object' ? parsed.apiKeys : {};
 			// Forward-migrate a stored Anthropic model that has since been retired.
 			const current = settings.activeModels?.anthropic;
 			if (current && ANTHROPIC_MODEL_MIGRATIONS[current]) {

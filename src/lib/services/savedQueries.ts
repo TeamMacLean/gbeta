@@ -17,8 +17,22 @@ export interface SavedQuery {
 
 const STORAGE_KEY = 'gbetter_saved_queries';
 
+/** Write to localStorage, swallowing quota/serialization errors. Returns success. */
+function safeSetItem(key: string, value: unknown): boolean {
+	if (!browser) return false;
+	try {
+		localStorage.setItem(key, JSON.stringify(value));
+		return true;
+	} catch (e) {
+		console.warn(`Failed to save ${key} (storage full or unavailable):`, e);
+		return false;
+	}
+}
+
 /**
- * Load all saved queries from localStorage
+ * Load all saved queries from localStorage.
+ * Returns [] for missing OR corrupted (non-array) data so callers can always
+ * rely on getting an array.
  */
 export function loadSavedQueries(): SavedQuery[] {
 	if (!browser) return [];
@@ -26,7 +40,14 @@ export function loadSavedQueries(): SavedQuery[] {
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
 		if (stored) {
-			return JSON.parse(stored);
+			const parsed = JSON.parse(stored);
+			if (Array.isArray(parsed)) {
+				// Drop entries that aren't well-formed saved queries.
+				return parsed.filter(
+					(q): q is SavedQuery => q && typeof q === 'object' && typeof q.gql === 'string'
+				);
+			}
+			console.warn('Saved queries in localStorage were not an array; ignoring.');
 		}
 	} catch (e) {
 		console.warn('Failed to load saved queries:', e);
@@ -50,10 +71,7 @@ export function saveQuery(name: string, gql: string, description?: string): Save
 	};
 
 	queries.unshift(newQuery);
-
-	if (browser) {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(queries));
-	}
+	safeSetItem(STORAGE_KEY, queries);
 
 	return newQuery;
 }
@@ -67,9 +85,7 @@ export function markQueryUsed(id: string): void {
 
 	if (query) {
 		query.lastUsedAt = Date.now();
-		if (browser) {
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(queries));
-		}
+		safeSetItem(STORAGE_KEY, queries);
 	}
 }
 
@@ -79,10 +95,7 @@ export function markQueryUsed(id: string): void {
 export function deleteQuery(id: string): void {
 	const queries = loadSavedQueries();
 	const filtered = queries.filter(q => q.id !== id);
-
-	if (browser) {
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-	}
+	safeSetItem(STORAGE_KEY, filtered);
 }
 
 /**
@@ -90,11 +103,14 @@ export function deleteQuery(id: string): void {
  */
 export function exportQueries(queries: SavedQuery[]): void {
 	const content = queries.map(q => {
+		const created = typeof q.createdAt === 'number' && !isNaN(q.createdAt)
+			? `-- Created: ${new Date(q.createdAt).toISOString()}`
+			: null;
 		const lines = [
-			`-- Query: ${q.name}`,
+			`-- Query: ${q.name ?? 'Untitled'}`,
 			q.description ? `-- ${q.description}` : null,
-			`-- Created: ${new Date(q.createdAt).toISOString()}`,
-			q.gql,
+			created,
+			q.gql ?? '',
 			''
 		].filter(Boolean).join('\n');
 		return lines;
@@ -248,6 +264,13 @@ export function getQueryFromUrl(): string | null {
 
 	const params = new URLSearchParams(window.location.search);
 	const gql = params.get('gql');
+	if (!gql) return null;
 
-	return gql ? decodeURIComponent(gql) : null;
+	try {
+		return decodeURIComponent(gql);
+	} catch (e) {
+		// Malformed percent-encoding in the URL — don't crash the app on load.
+		console.warn('Ignoring malformed ?gql= URL parameter:', e);
+		return null;
+	}
 }
