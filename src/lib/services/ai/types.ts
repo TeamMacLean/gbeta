@@ -35,6 +35,12 @@ export interface AIModel {
 	isDefault?: boolean;
 }
 
+/** A prior turn in a multi-turn AI conversation. */
+export interface ConversationTurn {
+	role: 'user' | 'assistant';
+	content: string;
+}
+
 export interface TranslationRequest {
 	/** The natural language input from the user */
 	input: string;
@@ -47,6 +53,9 @@ export interface TranslationRequest {
 
 	/** Which model to use */
 	model?: string;
+
+	/** Prior conversation turns, for multi-turn follow-ups / clarifications. */
+	history?: ConversationTurn[];
 }
 
 export interface BrowserContext {

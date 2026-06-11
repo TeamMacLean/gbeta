@@ -4,6 +4,7 @@
 	import TrackView from '$lib/components/TrackView.svelte';
 	import SessionRestoreBanner from '$lib/components/SessionRestoreBanner.svelte';
 	import QueryConsole from '$lib/components/QueryConsole.svelte';
+	import AIChat from '$lib/components/AIChat.svelte';
 </script>
 
 <Header />
@@ -15,3 +16,4 @@
 </main>
 
 <QueryConsole />
+<AIChat />

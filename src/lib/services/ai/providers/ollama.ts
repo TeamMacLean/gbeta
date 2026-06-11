@@ -72,7 +72,7 @@ export const ollamaProvider: AIProvider = {
 	models: MODELS,
 
 	async translate(request: TranslationRequest): Promise<TranslationResponse> {
-		const { input, context, model } = request;
+		const { input, context, model, history } = request;
 		const baseUrl = getOllamaUrl();
 		const apiUrl = `${baseUrl}/v1/chat/completions`;
 
@@ -91,6 +91,7 @@ export const ollamaProvider: AIProvider = {
 					temperature: 0,
 					messages: [
 						{ role: 'system', content: systemPrompt },
+						...(history ?? []).map((t) => ({ role: t.role, content: t.content })),
 						{ role: 'user', content: userMessage }
 					]
 				})

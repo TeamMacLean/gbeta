@@ -42,7 +42,7 @@ export const anthropicProvider: AIProvider = {
 	models: MODELS,
 
 	async translate(request: TranslationRequest): Promise<TranslationResponse> {
-		const { input, context, apiKey, model } = request;
+		const { input, context, apiKey, model, history } = request;
 
 		if (!apiKey) {
 			return {
@@ -53,6 +53,11 @@ export const anthropicProvider: AIProvider = {
 
 		const systemPrompt = buildSystemPrompt();
 		const userMessage = buildUserMessage(input, context);
+		// Prior turns first (for multi-turn follow-ups), then the new request.
+		const messages = [
+			...(history ?? []).map((t) => ({ role: t.role, content: t.content })),
+			{ role: 'user' as const, content: userMessage }
+		];
 
 		try {
 			const response = await fetch(ANTHROPIC_API_URL, {
@@ -67,9 +72,7 @@ export const anthropicProvider: AIProvider = {
 					model: model || 'claude-sonnet-4-6',
 					max_tokens: 256,
 					system: systemPrompt,
-					messages: [
-						{ role: 'user', content: userMessage }
-					]
+					messages
 				})
 			});
 

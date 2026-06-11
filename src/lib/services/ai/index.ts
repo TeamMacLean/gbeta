@@ -7,7 +7,8 @@ import type {
 	AISettings,
 	BrowserContext,
 	TranslationResponse,
-	TrackInfo
+	TrackInfo,
+	ConversationTurn
 } from './types';
 import { DEFAULT_AI_SETTINGS } from './types';
 import { anthropicProvider } from './providers/anthropic';
@@ -122,7 +123,8 @@ export function isAIConfigured(): boolean {
  */
 export async function translateToGQL(
 	input: string,
-	context: BrowserContext
+	context: BrowserContext,
+	history?: ConversationTurn[]
 ): Promise<TranslationResponse> {
 	const settings = loadAISettings();
 	const provider = providers.get(settings.activeProvider);
@@ -141,7 +143,8 @@ export async function translateToGQL(
 		input,
 		context,
 		apiKey,
-		model
+		model,
+		history
 	});
 }
 

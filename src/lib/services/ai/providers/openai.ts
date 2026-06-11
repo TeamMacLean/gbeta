@@ -34,7 +34,7 @@ export const openaiProvider: AIProvider = {
 	models: MODELS,
 
 	async translate(request: TranslationRequest): Promise<TranslationResponse> {
-		const { input, context, apiKey, model } = request;
+		const { input, context, apiKey, model, history } = request;
 
 		if (!apiKey) {
 			return {
@@ -59,6 +59,7 @@ export const openaiProvider: AIProvider = {
 					temperature: 0,
 					messages: [
 						{ role: 'system', content: systemPrompt },
+						...(history ?? []).map((t) => ({ role: t.role, content: t.content })),
 						{ role: 'user', content: userMessage }
 					]
 				})
