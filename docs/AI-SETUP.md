@@ -95,18 +95,23 @@ Cloud-based AI using Claude models. Requires an API key and has per-use costs.
 3. Under **AI Provider**, select **Anthropic (Claude)**
 4. Paste your API key
 5. Choose a model:
-   - **Claude Sonnet 4** - Best balance (recommended)
-   - **Claude 3.5 Haiku** - Fastest, cheapest
-   - **Claude Opus 4** - Most capable
+   - **Claude Sonnet 4.6** - Best balance (recommended)
+   - **Claude Haiku 4.5** - Fastest, cheapest
+   - **Claude Opus 4.8** - Most capable
 6. Click **Test Connection** to verify
+
+> If you previously saved an older Claude model that has since been retired,
+> gBeta automatically forward-migrates it to a current one, so Test Connection
+> won't 404.
 
 ### Pricing
 
 Anthropic charges per token (roughly per word):
-- Claude Sonnet 4: ~$3/million input tokens, ~$15/million output tokens
-- Claude 3.5 Haiku: ~$0.25/million input tokens, ~$1.25/million output tokens
+- Claude Sonnet 4.6: ~$3/million input tokens, ~$15/million output tokens
+- Claude Haiku 4.5: ~$1/million input tokens, ~$5/million output tokens
 
-For typical gBeta queries, expect costs of fractions of a cent per query.
+For typical gBeta queries (a short question plus a small track summary), expect
+costs of fractions of a cent per query.
 
 ---
 
@@ -147,12 +152,13 @@ OpenAI charges per token:
 ### What Gets Sent to Cloud Providers
 
 When using Anthropic or OpenAI, gBeta sends:
-- Your natural language query text
+- Your natural language query text (and, in the Ask AI panel, the prior turns of the conversation)
 - Current viewport location (chromosome, coordinates)
 - Track names and types (not the actual data)
-- Sample feature names (first 10 from each track)
+- A few sample feature names per track, and the names of filterable fields (e.g. VCF INFO keys) so the AI writes queries that match your data
 
-**Your actual genomic data files are NEVER sent to any external service.**
+**Your actual genomic data files are NEVER sent to any external service.** Feature
+coordinates, sequences, and values stay in your browser.
 
 ### For Maximum Privacy
 
@@ -179,18 +185,45 @@ gBeta remembers your API keys and model preferences for each provider.
 
 ## Using AI in gBeta
 
-Once configured, use the search bar to enter natural language queries:
+Once configured, there are three places natural language works. All of them
+translate your words into **GQL** — a concrete, editable, shareable command — so
+every answer stays reproducible.
+
+### 1. Ask AI panel (conversational)
+
+Click the floating **💬 Ask AI** button (bottom-right). This is a full chat:
+
+- Ask in plain English: *"which genes here have variants?"*, *"show pathogenic
+  variants in TP53"*, *"what's the fewest variants in any gene?"*
+- gBeta **runs the query** and shows the resulting genes/variants as a **ranked,
+  clickable list** — click any row to jump straight there.
+- If your request is ambiguous (e.g. scope unclear), it **asks a follow-up
+  question** and remembers the conversation, so you can reply *"in the current
+  view"* and it continues from there.
+
+### 2. GQL Console (natural language → editable GQL)
+
+Open the Console (`Cmd+\`` or the bottom tab). Type a request and it produces the
+**GQL**, which you can review and edit before pressing **Execute** — ideal when
+you want the reproducible command, not just the answer.
+
+### 3. Search bar (quick navigation)
+
+The header search bar also accepts free text and routes it to the AI when it
+isn't a coordinate, gene symbol, or GQL command.
+
+Examples:
 
 ```
 show me all genes on chromosome 17
-zoom into TP53
-find variants with high impact
-filter to show only exons
+which genes here overlap variants?
+find variants with high impact in BRCA1
+what's the average number of variants per gene?
 ```
 
-gBeta translates these to GQL commands, which you can:
-- See in the query history
-- Copy and share with colleagues
-- Re-run for reproducibility
+Every translated query lands in the unified **history**, so you can copy it,
+**Export .gql**, share it via URL, or save the whole sequence as a re-runnable
+**Analysis** (the Analyses tab in the Console).
 
-See the [GQL Manual](GQL-MANUAL.md) for the full query language specification.
+See the [GQL Manual](GQL-MANUAL.md) for the full query language, and
+[GQL Examples](GQL-EXAMPLES.md) for practical recipes.

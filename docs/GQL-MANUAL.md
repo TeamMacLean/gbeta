@@ -17,8 +17,9 @@ When you type natural language, gBeta translates it to GQL, ensuring your querie
 - [Highlight Commands](#highlight-commands)
 - [Clear Commands](#clear-commands)
 - [List Commands](#list-commands)
-- [SELECT Queries](#select-queries)
+- [SELECT Queries](#select-queries) (incl. INTERSECT/WITHIN, WHERE, [Aggregates](#aggregates))
 - [COUNT Queries](#count-queries)
+- [Coverage Queries](#coverage-queries)
 - [Coordinate Formats](#coordinate-formats)
 - [Natural Language Translation](#natural-language-translation)
 
@@ -83,22 +84,18 @@ search BRCA1
 search gene MYC
 ```
 
-### Built-in Gene Index
+### Gene Resolution
 
-gBeta includes coordinates for common genes:
+Gene symbols are resolved to coordinates against **live databases** —
+[MyGene.info](https://mygene.info) (18 assemblies) and Ensembl REST (fungal/
+protist assemblies) — so **any** valid gene symbol works, not a fixed list. The
+result is cached for the session.
 
-| Gene | Location |
-|------|----------|
-| TP53 | chr17:7668421-7687490 |
-| BRCA1 | chr17:43044295-43170245 |
-| BRCA2 | chr13:32315086-32400266 |
-| EGFR | chr7:55019017-55211628 |
-| MYC | chr8:127735434-127742951 |
-| KRAS | chr12:25205246-25250936 |
-| PIK3CA | chr3:179148114-179240093 |
-| APC | chr5:112707498-112846239 |
-| PTEN | chr10:87863438-87971930 |
-| RB1 | chr13:48303747-48481890 |
+- Resolution happens for `NAVIGATE`/`go to`, a bare gene symbol in the search
+  bar, `SEARCH gene <symbol>`, `SELECT … WITHIN <gene>`, and `FIND variants in <gene>`.
+- If a track you've loaded already contains the gene, its coordinates are used
+  first; otherwise the lookup API is queried.
+- If a symbol matches multiple loci, a picker lets you choose.
 
 ---
 
@@ -350,12 +347,20 @@ SELECT VARIANTS FROM sample.vcf
 
 #### INTERSECT
 
-Find features overlapping another track.
+Find features overlapping another track. After an `INTERSECT`, **each result
+gains a numeric `count` field** — the number of overlapping features — which you
+can filter (`WHERE count …`) and aggregate (see [Aggregates](#aggregates)).
+Results are shown ranked by `count`.
 
 ```
-SELECT GENES INTERSECT variants
+SELECT GENES INTERSECT variants                      # genes that overlap a variant
+SELECT GENES INTERSECT variants WHERE count >= 3     # genes with 3+ variants
+SELECT GENES INTERSECT variants WHERE count = 1      # genes with exactly one
 SELECT FEATURES FROM peaks INTERSECT promoters
 ```
+
+The intersect target can be a track name (quoted or not) or a loose type word —
+`variants` matches your VCF track, `genes` matches your gene track.
 
 #### WITHIN
 
@@ -368,14 +373,21 @@ SELECT FEATURES WITHIN chr17:7000000-8000000
 
 #### WHERE
 
-Filter by field values.
+Filter by field values. For variants, **all VCF INFO fields are available**
+(lowercased) plus `ref`/`alt`; for genes, `name`/`strand`/`length`/`start`/`end`;
+after `INTERSECT`, the `count` field. The Console and AI know which fields each
+loaded track actually has and suggest them.
 
 ```
-SELECT VARIANTS WHERE significance = 'pathogenic'
-SELECT GENES WHERE strand = '+' AND length > 10000
+SELECT VARIANTS WHERE clin = pathogenic
+SELECT VARIANTS WHERE clin CONTAINS pathogenic      # also matches likely_pathogenic
+SELECT VARIANTS WHERE impact = nonsense
+SELECT GENES WHERE strand = + AND length > 10000
+SELECT GENES INTERSECT variants WHERE count >= 3
 ```
 
-Supported operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `CONTAINS`, `MATCHES`
+Supported operators: `=`, `!=`, `>`, `<`, `>=`, `<=`, `CONTAINS`, `MATCHES`, joined with `AND`.
+If you filter on a field no result has, gBeta tells you rather than silently returning nothing.
 
 #### IN
 
@@ -407,6 +419,26 @@ SELECT GENES LIMIT 10
 SELECT GENES ORDER BY length DESC LIMIT 5
 ```
 
+### Aggregates
+
+Wrap a numeric field in an aggregate function **right after `SELECT`** to compute
+a single value over the result set. Functions: `MIN`, `MAX`, `AVG` (= `MEAN`),
+`SUM`, `COUNT`.
+
+```
+SELECT MIN(count) GENES INTERSECT variants    # fewest variants in any gene
+SELECT MAX(count) GENES INTERSECT variants    # most variants in any gene
+SELECT AVG(count) GENES INTERSECT variants    # mean variants per gene
+SELECT SUM(count) GENES INTERSECT variants    # total
+SELECT COUNT(qual) VARIANTS                    # how many have a qual value
+```
+
+The field must be numeric (e.g. `count` after `INTERSECT`, or `qual`/`score`/
+`length`). `MIN`/`MAX` also report **which** rows hit the extreme, and those stay
+clickable. There is no `GROUP BY`, but `INTERSECT` already groups overlapping
+features per result — so "min/max/average variants per gene" is an aggregate over
+`SELECT GENES INTERSECT <variants>`.
+
 ### Complete Examples
 
 ```
@@ -414,17 +446,44 @@ SELECT GENES ORDER BY length DESC LIMIT 5
 SELECT GENES IN VIEW ORDER BY length DESC LIMIT 10
 
 # Pathogenic variants in BRCA1
-SELECT VARIANTS WITHIN BRCA1 WHERE significance = 'pathogenic'
+SELECT VARIANTS WITHIN BRCA1 WHERE clin CONTAINS pathogenic
 
-# Genes that have variants, sorted by name
-SELECT GENES INTERSECT variants ORDER BY name ASC
+# Genes ranked by how many variants they contain
+SELECT GENES INTERSECT variants ORDER BY count DESC
+
+# The most variants found in any single gene
+SELECT MAX(count) GENES INTERSECT variants
 
 # All features from a specific track in current view
 SELECT * FROM my-track IN VIEW
 
-# Count CDS features on the plus strand
-SELECT FEATURES WHERE type = 'CDS' AND strand = '+'
+# CDS features on the plus strand
+SELECT FEATURES WHERE type = CDS AND strand = +
 ```
+
+---
+
+## Coverage Queries
+
+Find regions of a BAM/CRAM alignment track that meet a depth threshold. gBeta
+streams data through the BAM index and computes coverage only for the queried
+region, so it scales to large files.
+
+### Syntax
+
+```
+SELECT REGIONS WHERE coverage >= <depth> [IN <region>]
+```
+
+### Examples
+
+```
+SELECT REGIONS WHERE coverage >= 10
+SELECT REGIONS WHERE coverage >= 15 IN chr1:1000-2000
+```
+
+Natural language: *"find high coverage regions"*, *"show areas with coverage
+above 20"*. Requires a BAM or CRAM track to be loaded.
 
 ---
 
@@ -478,16 +537,24 @@ gBeta automatically translates natural language to GQL:
 | "move left" | `pan left 10kb` |
 | "show only exons" | `filter type=exon` |
 | "show plus strand" | `filter strand=+` |
-| "what genes have variants" | `list genes with variants` |
-| "variants in BRCA1" | `list variants in BRCA1` |
-| "highlight TP53" | `highlight chr17:7668421-7687490` |
+| "which genes here have variants" | `SELECT GENES INTERSECT variants IN VIEW` |
+| "pathogenic variants in BRCA1" | `SELECT VARIANTS WHERE clin CONTAINS pathogenic WITHIN BRCA1` |
+| "fewest variants in any gene" | `SELECT MIN(count) GENES INTERSECT variants` |
+| "highlight TP53" | `highlight TP53` |
 | "clear everything" | `clear all` |
+
+Coordinate navigation and gene-symbol lookup are deterministic and need no AI.
+Free-text questions like the data queries above are translated by the AI — use
+the conversational **Ask AI** panel (which also runs the query and shows
+clickable results), or the Console to review/edit the GQL before running. See the
+[AI Setup Guide](AI-SETUP.md).
 
 ### Tips
 
 - Be specific: "filter to exons" is clearer than "show exons"
 - Gene names work directly: typing "TP53" navigates there
 - Coordinates are auto-detected and converted to navigate commands
+- For "which/most/fewest/average", the AI returns a `SELECT`/aggregate so you get a ranked, clickable list — not a guessed single answer
 
 ---
 

@@ -141,8 +141,9 @@ COUNT VARIANTS IN VIEW
 ### Query variants with specific properties
 
 ```
-SELECT VARIANTS WHERE significance = 'pathogenic'
-SELECT VARIANTS WHERE ref = 'A' AND alt = 'G'
+SELECT VARIANTS WHERE clin CONTAINS pathogenic
+SELECT VARIANTS WHERE impact = nonsense
+SELECT VARIANTS WHERE ref = A AND alt = G
 ```
 
 ---
@@ -299,16 +300,44 @@ SELECT VARIANTS WITHIN TP53
 ### Find pathogenic variants in cancer genes
 
 ```
-SELECT VARIANTS WITHIN BRCA1 WHERE significance = 'pathogenic'
-SELECT VARIANTS WITHIN TP53 WHERE significance = 'pathogenic'
+SELECT VARIANTS WITHIN BRCA1 WHERE clin CONTAINS pathogenic
+SELECT VARIANTS WITHIN TP53 WHERE clin CONTAINS pathogenic
+```
+*Use your VCF's actual INFO field name (e.g. `clin`, `clnsig`, `impact`). The
+Console and AI list the available fields for each loaded track.*
+
+### Rank genes by variant count
+
+```
+SELECT GENES INTERSECT variants ORDER BY count DESC
+```
+*After `INTERSECT`, each gene carries a `count` field (number of overlapping
+variants); the list is shown ranked by it.*
+
+### Filter genes by their variant count
+
+```
+SELECT GENES INTERSECT variants WHERE count >= 3     # genes with 3 or more
+SELECT GENES INTERSECT variants WHERE count = 1      # genes with exactly one
 ```
 
-### Count variants per gene
+### Aggregate the variant counts
 
 ```
-SELECT GENES INTERSECT variants ORDER BY name ASC
+SELECT MIN(count) GENES INTERSECT variants    # fewest variants in any gene
+SELECT MAX(count) GENES INTERSECT variants    # most variants in any gene
+SELECT AVG(count) GENES INTERSECT variants    # mean variants per gene
+SELECT SUM(count) GENES INTERSECT variants    # total
 ```
-*Results include variant overlap count in details*
+*`MIN`/`MAX` also list the genes that hit the extreme — clickable, so the answer
+is one click from the view.*
+
+### Find high-coverage regions (BAM/CRAM)
+
+```
+SELECT REGIONS WHERE coverage >= 10
+SELECT REGIONS WHERE coverage >= 15 IN chr1:1000-2000
+```
 
 ### Query a specific track
 
@@ -408,18 +437,22 @@ This removes all filters and highlights, giving you a clean slate.
 
 ### Use natural language for discovery
 
-Type what you want in plain English:
+Type a question in plain English — in the conversational **Ask AI** panel
+(bottom-right), the Console, or the search bar:
 
-- "show me genes"
-- "what variants are in BRCA1"
-- "zoom in"
+- "which genes here have variants?"
+- "show pathogenic variants in BRCA1"
+- "what's the fewest variants in any gene?"
 - "go to chromosome 17"
 
-gBeta will translate and show you the GQL command used.
+The Ask AI panel runs the query and shows a ranked, clickable result list; the
+Console shows you the editable GQL first. Either way you get a reproducible
+command you can save, export (`.gql`), or keep as a re-runnable **Analysis**.
 
 ---
 
 ## See Also
 
 - [GQL Manual](GQL-MANUAL.md) - Complete command reference
+- [AI Setup Guide](AI-SETUP.md) - Configure the Ask AI panel
 - [Getting Started Tutorial](tutorials/01-getting-started.md) - Step-by-step introduction
