@@ -3,7 +3,7 @@
 ## Project Overview
 A modern, lightweight genome browser. Fast, beautiful, AI-native.
 
-**Status**: Active development, Session 27 (2026-06-10) - Gene lookup + AI shipped; query engine converged
+**Status**: Active development, Session 28 (2026-06-11) - Adversarial bomb-testing + hardening (46 bugs fixed)
 
 ## Key Design Principles
 1. **Fast by default** - Sub-second load, 60fps interactions
@@ -252,6 +252,20 @@ Current bucket: `pub-cdedc141a021461d9db8432b0ec926d7.r2.dev`
 ## Session Log
 
 ### Recent Sessions
+
+**Session 28 (2026-06-11)**: Adversarial "bomb testing" + hardening
+- Multi-agent find->verify workflow swept 8 surfaces -> **46 confirmed bugs**
+  (2 critical, 21 high, 15 medium, 8 low). Fixed in 8 themed batches w/ tests.
+- Hardened: persistence (corrupted localStorage/URLs), track parsers (GFF3/
+  bedGraph/BED12/VCF), GQL engine (filter operators, silent-empty warnings),
+  viewport (NaN/Infinity/inverted-range guards), gene lookup (multi-locus,
+  isCoordinate validation), coverage (max-pool downsampling, strategy NaN),
+  concurrency (SearchBar request-seq guard, TrackView stale-paint guard), AI
+  (multi-REASON, capped track context).
+- New test files: persistence-/parser-/gql-/viewport-robustness,
+  robustness-gene-coverage, ai-prompt (extended). 472 unit tests pass; 0 check
+  errors; live smoke test clean. See docs/next-session-prompt.md for deferred
+  lows + follow-ups.
 
 **Session 27 (2026-06-10)**: Gene lookup + AI; engine convergence
 - **Stabilized coverage** quality-controls (was red): fixed `viewport.current.chr`
