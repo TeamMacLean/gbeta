@@ -559,6 +559,7 @@ Step-by-step guides in [`docs/`](docs/):
 
 **Reference:**
 
+- [Pilot: Try This](docs/PILOT.md) — a one-page orientation for new users / pilot testers
 - [GQL Manual](docs/GQL-MANUAL.md) — the complete query-language reference
 - [GQL Examples](docs/GQL-EXAMPLES.md) — practical query recipes
 - [AI Setup Guide](docs/AI-SETUP.md) — configure Ollama / Anthropic / OpenAI
