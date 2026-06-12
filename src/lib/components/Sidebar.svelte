@@ -15,6 +15,7 @@
 	} from '$lib/services/localBinaryTracks';
 	import CoverageQualityControls from '$lib/components/CoverageQualityControls.svelte';
 	import { useAssembly } from '$lib/stores/assembly.svelte';
+	import { chromosomeMismatch } from '$lib/services/assemblyMatch';
 	import {
 		EXAMPLE_FILES,
 		EXAMPLE_ASSEMBLY_ID,
@@ -338,20 +339,9 @@
 	// Reactive per-track check: does this track's data match the CURRENT assembly?
 	// Recomputes when the assembly is switched, so already-loaded tracks that no
 	// longer match get flagged (the load-time warning only fires once, on load).
-	function chromMismatch(track: { features: { chromosome: string }[] }): { bad: boolean; sample: string } {
-		const feats = track.features;
-		if (!feats || feats.length === 0) return { bad: false, sample: '' };
-		const asmChroms = new Set(assembly.chromosomes);
-		const unmatched = new Set<string>();
-		let matched = false;
-		const limit = Math.min(feats.length, 5000);
-		for (let i = 0; i < limit; i++) {
-			const chr = feats[i].chromosome;
-			if (asmChroms.has(chr) || assembly.getChromosome(chr) !== undefined) matched = true;
-			else unmatched.add(chr);
-		}
-		// Flag only when NOTHING matched (a genuinely wrong assembly), not a few stray contigs.
-		return { bad: !matched && unmatched.size > 0, sample: [...unmatched].slice(0, 3).join(', ') };
+	// Logic lives in services/assemblyMatch so it's unit-tested.
+	function chromMismatch(track: { features: { chromosome: string; end: number }[] }) {
+		return chromosomeMismatch(track.features, (name) => assembly.getChromosome(name));
 	}
 
 	function navigateToTrack(track: { features: { chromosome: string; start: number; end: number }[] }) {
