@@ -56,10 +56,16 @@ natural-language questions are translated *into* GQL rather than answered
 directly, and the translation is always surfaced as an editable command before it
 runs. The user therefore gets the ergonomics of asking a question and the
 reproducibility of a concrete script, applied to their own data inside the
-interactive view rather than in a separate tool. A second design commitment is
-privacy: gBeta is a static web application with no backend, so genomic data is
-parsed and held only in the browser, and language-model calls transmit only the
-question and a small description of the loaded tracks — never the data itself.
+interactive view rather than in a separate tool. A second design commitment
+follows from this. In-browser, client-side operation on local files is, of
+course, not new — desktop IGV, igv.js and JBrowse all run over local data — but
+here it extends to the query and natural-language layer: gBeta is a static web
+application with no backend, so the data and the queries over it stay in the
+browser, in contrast to query interfaces (such as the Table Browser or BioMart)
+that operate on server-hosted or uploaded data. The only external request is the
+optional language-model call, which transmits the question and a short summary of
+the loaded tracks (names, types, field names) — never feature data; a local model
+can be used to remove even this.
 
 ## Implementation and features
 
@@ -95,10 +101,18 @@ ambiguous. Crucially, the model is given only the question, the current view, an
 a summary of loaded tracks (names, types, and available field names) — it never
 receives feature data — and its output is always a transparent GQL command.
 
-**Reproducibility.** The current view is encoded in the URL, so a link reproduces
-an exact view. Query sequences can be exported as annotated `.gql` scripts or
-saved in-app as re-runnable "analyses" (notebooks), and a unified history records
-every command with its originating question.
+**Reproducibility.** Mechanisms for recording and re-running analyses are not
+themselves new — IGV batch scripts, UCSC saved sessions and BioMart query URLs
+serve similar ends. What matters here is that the *language-model step* leaves a
+durable artefact: because the model emits an editable GQL command rather than an
+answer, the analysis is captured as a concrete, inspectable query. We stress an
+honest limit of this: language-model output is not deterministic, so it is the
+captured command — not the natural-language-to-GQL translation — that reproduces;
+surfacing the command for review before it runs is precisely what lets the user
+commit to a fixed, re-runnable step. The current view is also encoded in the URL
+(so a link reproduces a view), query sequences export as annotated `.gql` scripts
+or save in-app as re-runnable "analyses" (notebooks), and a unified history
+records every command with its originating question.
 
 gBeta was developed rapidly with the assistance of AI coding tools; correctness
 is maintained by an automated test suite (~500 unit tests and end-to-end browser
