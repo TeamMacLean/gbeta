@@ -569,8 +569,18 @@ Step-by-step guides in [`docs/`](docs/):
 
 ---
 
+## Contributing
+
+Contributions, bug reports, and feedback are welcome. Please see
+[CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, set up a development
+environment, and submit changes, and the [Code of Conduct](CODE_OF_CONDUCT.md).
+The quickest way to report something is the **📣 feedback button** in the app
+header.
+
+---
+
 ## License
 
-MIT.
+MIT — see [LICENSE](LICENSE).
 
 Built with Svelte, TypeScript, and Canvas. Powered by curiosity.
