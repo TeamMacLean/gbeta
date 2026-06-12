@@ -141,7 +141,6 @@ export const anthropicProvider: AIProvider = {
 
 	async testConnection(apiKey: string): Promise<boolean> {
 		try {
-			console.log('Testing Anthropic connection...');
 			const response = await fetch(ANTHROPIC_API_URL, {
 				method: 'POST',
 				headers: {
@@ -159,16 +158,13 @@ export const anthropicProvider: AIProvider = {
 				})
 			});
 
-			console.log('Anthropic response status:', response.status, 'ok:', response.ok);
-
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({}));
 				console.error('Anthropic test failed:', response.status, errorData);
 				return false;
 			}
 
-			const data = await response.json();
-			console.log('Anthropic test succeeded:', data);
+			await response.json();
 			return true;
 		} catch (error) {
 			console.error('Anthropic connection error:', error);

@@ -436,8 +436,6 @@ function updateForViewport(viewport: Viewport): void {
 			(t) => t.visible && viewportChanged(t, capturedViewport)
 		);
 
-		console.log(`%c[LocalBinaryTracks] Debounce fired: ${localBinaryTracks.length} tracks, ${tracksToUpdate.length} need update`, 'color: #8b5cf6');
-
 		for (const track of tracksToUpdate) {
 			fetchTrackFeatures(track, capturedViewport, currentAbortController.signal);
 		}

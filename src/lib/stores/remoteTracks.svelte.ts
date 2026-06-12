@@ -420,12 +420,7 @@ function updateForViewport(viewport: Viewport): void {
 			(t) => t.visible && viewportChanged(t, capturedViewport)
 		);
 
-		console.log(`%c[RemoteTracks] Debounce fired: ${remoteTracks.length} tracks, ${tracksToUpdate.length} need update for ${capturedViewport.chromosome}:${capturedViewport.start}-${capturedViewport.end}`, 'color: #22c55e');
-
 		for (const track of tracksToUpdate) {
-			if (track.lastViewport) {
-				console.log(`%c[RemoteTracks] Track ${track.id}: lastVP=${track.lastViewport.start}-${track.lastViewport.end}, currentVP=${capturedViewport.start}-${capturedViewport.end}`, 'color: #888');
-			}
 			fetchTrackFeatures(track, capturedViewport, currentAbortController.signal);
 		}
 	}, FETCH_DEBOUNCE_MS);

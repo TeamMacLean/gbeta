@@ -1150,8 +1150,6 @@
 
 		const renderMode = getReadRenderingMode(pixelsPerBase);
 
-		console.log(`[TrackView] Render mode calculation: pixelsPerBase=${pixelsPerBase}, renderMode=${renderMode}`);
-
 		if (renderMode === 'sequence') {
 			// High zoom: show nucleotide letters
 			renderReadsAsSequence(ctx, visible, plotY, plotHeight);
@@ -1162,19 +1160,13 @@
 			// Low zoom: use windowed coverage for large regions
 			const regionSize = viewport.current.end - viewport.current.start;
 
-			console.log(`[TrackView] Density mode triggered: renderMode=${renderMode}, regionSize=${regionSize}`);
-
 			// Use windowed coverage for regions > 50KB to prevent hangs
 			if (regionSize > 50000 && trackUrl) {
-				console.log(`[BAM Windowed] Using windowed coverage for ${regionSize}bp region`);
 				await renderBamWindowedCoverage(ctx, trackUrl, plotY, plotHeight, color);
 			} else {
 				// Fallback to traditional coverage for smaller regions
-				console.log(`[BAM Traditional] Using traditional coverage for ${regionSize}bp region`);
 				renderBamCoverage(ctx, visible, plotY, plotHeight, color);
 			}
-
-			console.log(`[TrackView] Coverage rendering complete for density mode`);
 		}
 	}
 
