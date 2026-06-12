@@ -335,6 +335,25 @@
 		};
 	}
 
+	// Reactive per-track check: does this track's data match the CURRENT assembly?
+	// Recomputes when the assembly is switched, so already-loaded tracks that no
+	// longer match get flagged (the load-time warning only fires once, on load).
+	function chromMismatch(track: { features: { chromosome: string }[] }): { bad: boolean; sample: string } {
+		const feats = track.features;
+		if (!feats || feats.length === 0) return { bad: false, sample: '' };
+		const asmChroms = new Set(assembly.chromosomes);
+		const unmatched = new Set<string>();
+		let matched = false;
+		const limit = Math.min(feats.length, 5000);
+		for (let i = 0; i < limit; i++) {
+			const chr = feats[i].chromosome;
+			if (asmChroms.has(chr) || assembly.getChromosome(chr) !== undefined) matched = true;
+			else unmatched.add(chr);
+		}
+		// Flag only when NOTHING matched (a genuinely wrong assembly), not a few stray contigs.
+		return { bad: !matched && unmatched.size > 0, sample: [...unmatched].slice(0, 3).join(', ') };
+	}
+
 	function navigateToTrack(track: { features: { chromosome: string; start: number; end: number }[] }) {
 		if (track.features.length === 0) return;
 
@@ -581,6 +600,7 @@
 					{#each tracks.all as track (track.id)}
 						{@const stats = getTrackStats(track)}
 						{@const indicatorColor = getTrackIndicatorColor(track.typeId)}
+						{@const mismatch = chromMismatch(track)}
 						<div
 							class="p-2 bg-[var(--color-bg-tertiary)] rounded border border-[var(--color-border)] group"
 							style="border-left: 3px solid {indicatorColor}"
@@ -608,6 +628,18 @@
 								>
 									{track.name}
 								</button>
+
+								<!-- Assembly-mismatch indicator (reacts to the current assembly) -->
+								{#if mismatch.bad}
+									<span
+										class="shrink-0 text-amber-500"
+										title={`This track's chromosomes (${mismatch.sample}) aren't in ${assembly.current.name}, so it won't display. Switch to the matching genome in the assembly selector (top-left).`}
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+										</svg>
+									</span>
+								{/if}
 
 								<!-- Delete button -->
 								<button
