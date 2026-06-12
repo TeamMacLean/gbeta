@@ -3,7 +3,7 @@
 ## Project Overview
 A modern, lightweight genome browser. Fast, beautiful, AI-native.
 
-**Status**: Active development, Session 29 (2026-06-11) - Analysis engine working end-to-end; renamed to gBeta; docs refreshed
+**Status**: Milestone reached, Session 30 (2026-06-12) - gBeta: analysis engine + AI querying working; repo/deploy renamed to gbeta; pilot-ready; JOSS-standard paper drafted
 
 ## Key Design Principles
 1. **Fast by default** - Sub-second load, 60fps interactions
@@ -253,6 +253,26 @@ Current bucket: `pub-cdedc141a021461d9db8432b0ec926d7.r2.dev`
 
 ### Recent Sessions
 
+**Session 30 (2026-06-12)**: Field-readiness, rename, paper — milestone
+- **Pilot prep**: one-click "Load example data" (bundled GFF3+VCF via `?raw`,
+  lands at TP53), reactive per-track **assembly-mismatch flags** in the sidebar
+  (services/assemblyMatch, robust to shared chrN naming — caught via maize),
+  in-app **feedback link** (megaphone -> prefilled GitHub issue, metadata only),
+  and a one-page pilot orientation (`docs/PILOT.md`).
+- **Renamed repo + deploy GBetter -> gBeta**: GitHub repo TeamMacLean/gbeta,
+  Pages at teammaclean.github.io/gbeta, svelte.config base `/gbeta`, feedback
+  target, all doc URLs. (localStorage `gbetter_*` legacy keys kept for migration;
+  local folder still `gbetter`.)
+- **Paper**: a Bioinformatics-style note (`docs/app-note.md`) and a **JOSS-format
+  paper** (`paper.md` + `paper.bib`) with **Figure 1** (`docs/figures/`).
+  Claims deliberately **tempered + cited** (querying/privacy/reproducibility are
+  framed as *integration*, not novelty; honest LLM non-determinism caveat).
+- **Community/JOSS files**: CONTRIBUTING, CODE_OF_CONDUCT, LICENSE (MIT was
+  missing), `docs/JOSS-CHECKLIST.md` (honest: paperwork met, scope/community
+  gates not yet).
+- Removed leftover debug `console.log` narration (TrackView/remote/binary/AI).
+  519 unit tests pass; `npm run check` clean.
+
 **Session 29 (2026-06-11)**: Analysis engine + rename + docs
 - **Retired KNOWN_GENES**: SEARCH/WITHIN/FIND resolve gene names via real
   tracks + the MyGene/Ensembl lookup (track-first), not a hardcoded map.
@@ -269,7 +289,7 @@ Current bucket: `pub-cdedc141a021461d9db8432b0ec926d7.r2.dev`
   **aggregation** (`SELECT MIN/MAX/AVG/SUM/COUNT(field)`).
 - **Renamed GBetter -> gBeta** everywhere user-visible, with a one-time
   localStorage migration (`services/storage.ts` getMigrated) so saved data +
-  the AI key survive. Repo/Pages URLs + `/gbetter` deploy base left as-is.
+  the AI key survive. (Repo/Pages URLs renamed to gbeta in Session 30.)
 - **Docs**: rewrote README as a full user guide; deleted 9 obsolete plan/
   handoff docs; updated AI-SETUP/GQL-MANUAL/GQL-EXAMPLES + tutorials for the
   new features. 504 unit tests pass; `npm run check` clean.

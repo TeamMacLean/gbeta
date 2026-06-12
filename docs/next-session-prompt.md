@@ -1,45 +1,45 @@
 # Next Session — gBeta
 
-**Last session:** 29 (2026-06-11). Everything committed and pushed to
-origin/main (`7823811`); `npm run check` 0 errors, 504 unit tests pass; verified
-live against the bundled cancer-variants test data. Working tree clean.
+**Status at last close (Session 30, 2026-06-12):** milestone reached, possibly an
+endpoint. Everything committed and pushed to `origin/main`; `npm run check` 0
+errors, 519 unit tests pass; working tree clean; dev server stopped. Live at
+**https://teammaclean.github.io/gbeta/** (repo: `github.com/TeamMacLean/gbeta`).
 
-## State of the project
-gBeta works end-to-end as a private, AI-native genome **analysis engine** over
-loaded GFF3/VCF/BAM tracks: gene lookup, the full GQL (SELECT, WHERE,
-INTERSECT/WITHIN, IN scopes, `count`, **aggregation** MIN/MAX/AVG/SUM/COUNT,
-coverage queries), a conversational **Ask AI** panel with clickable ranked
-results, and re-runnable notebook **Analyses**. Renamed from GBetter → **gBeta**
-(localStorage auto-migrates old data). Docs (README + reference + tutorials) are
-current.
+## What gBeta is now
+A private, in-browser, AI-native genome browser used as a lightweight analysis
+engine: gene lookup (MyGene/Ensembl), the full GQL (SELECT / WHERE / INTERSECT /
+WITHIN / IN scopes / `count` / aggregation MIN-MAX-AVG-SUM-COUNT / coverage), a
+conversational **Ask AI** panel returning clickable ranked results, re-runnable
+notebook **Analyses**, and reproducible URLs / `.gql` export. Pilot-ready:
+one-click example data, reactive assembly-mismatch flags, in-app feedback link,
+and a one-page orientation (`docs/PILOT.md`). A JOSS-format paper exists
+(`paper.md` + `paper.bib`, Figure 1 in `docs/figures/`).
 
-## How to drive / verify (recipes)
-- Live: `npm run dev` (5173) + Playwright via `node_modules/playwright`.
-- Drive the AI without a key: `page.route('**/v1/messages', …)` to stub the
-  Anthropic response, and pre-seed `localStorage['gbeta_ai_settings']`
-  (`{activeProvider:'anthropic', apiKeys:{anthropic:'x'}, activeModels:{…}}`).
+## If picking back up — the real next step is *use*, not features
+The project deliberately paused to go to the field. The highest-value work is
+running the **lab/collaborator pilot** (give 2-3 people a real task on their own
+data, watch, collect feedback via the megaphone) — then let the issues that come
+back drive what's built next.
+
+## Open threads / candidate work (nothing urgent)
+- **JOSS gates** (see `docs/JOSS-CHECKLIST.md`): paperwork is done; the unmet
+  bars are *scope / substantial effort* and *evidence of use / community* — earned
+  by the pilot + time, not by edits. Before any submission: fill author/ORCID/
+  funding in `paper.md`, verify `paper.bib` details/DOIs, set the CoC contact,
+  archive a release (Zenodo) for a DOI.
+- **GQL**: arbitrary `GROUP BY` (only scalar aggregates + implicit per-gene
+  INTERSECT grouping exist); result-set export (CSV/BED); median/quantiles.
+- **AI chat**: persist the thread; save an exchange as an Analysis.
+- Optionally rename the local working directory `gbetter` -> `gbeta` (cosmetic).
+
+## Recipes / gotchas
+- Verify live: `npm run dev` (5173) + Playwright via `node_modules/playwright`.
+  Drive the AI without a key by stubbing `**/v1/messages` and pre-seeding
+  `localStorage['gbeta_ai_settings']`.
 - **Probe pitfall**: importing a store separately inside `page.evaluate` can be a
-  DIFFERENT instance than the running app (made IN VIEW falsely return 0). For
-  viewport-dependent checks, drive the real UI (file input, search bar, console).
-- Tests: `npx vitest run --exclude '**/real-bam-performance.test.ts'`. jsdom has
-  no real localStorage and `File` lacks `.text()` — see the robustness tests for
-  the mocks.
-
-## Possible next directions (nothing urgent)
-- **Arbitrary `GROUP BY`** — only scalar aggregates + the implicit per-gene
-  INTERSECT grouping exist; grouping by an arbitrary field is the natural next
-  GQL feature.
-- **Export a result set** (CSV/BED) from the chat / result panel.
-- **Persist the Ask AI chat thread**; let a chat exchange be saved as an Analysis.
-- **CONTRIBUTING.md** — the README references contributing guidelines that don't
-  exist yet; and a screenshot/GIF in the README.
-- Median/quantile aggregates; multi-field aggregates.
-- (Optional) Rename the GitHub repo + Pages to `gbeta` — would then need the
-  `svelte.config.js` base path + README URLs flipped to match.
-
-## Key code pointers
-- Track-type recognition: `isGeneTrack`/`isVariantTrack` in `queryLanguage.ts`.
-- Aggregate parse/exec: `parseSelectQuery` / `executeSelectQuery`.
-- Gene resolution for SEARCH/WITHIN/FIND: `queryRouter.ts` `resolveQueryGeneTerms`.
-- Storage migration: `services/storage.ts` `getMigrated`.
-- AI: `services/ai/` (providers + `prompt.ts`), `components/AIChat.svelte`.
+  DIFFERENT instance than the running app — drive the real UI for viewport-
+  dependent checks.
+- Tests: `npx vitest run --exclude '**/real-bam-performance.test.ts'`.
+- Key code: `isGeneTrack`/`isVariantTrack` + aggregate parse/exec in
+  `queryLanguage.ts`; gene resolution in `queryRouter.ts`; assembly-mismatch in
+  `services/assemblyMatch.ts`; storage migration in `services/storage.ts`.
