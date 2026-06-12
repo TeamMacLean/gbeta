@@ -36,7 +36,7 @@ gBeta stores your viewport state in the URL.
 ### What's in the URL
 
 ```
-https://teammaclean.github.io/gbetter/?chr=chr17&start=7668421&end=7687490
+https://teammaclean.github.io/gbeta/?chr=chr17&start=7668421&end=7687490
 ```
 
 This encodes:
@@ -399,7 +399,7 @@ Create a reproducible analysis workflow:
 
 ### 1. Set up your session
 
-1. Open gBeta: https://teammaclean.github.io/gbetter/
+1. Open gBeta: https://teammaclean.github.io/gbeta/
 2. Set theme to **Light** (Settings > Display) for publication-ready screenshots
 3. Select assembly **GRCh38**
 

@@ -242,7 +242,7 @@ Settings are stored in your browser's **localStorage**:
 Currently, settings are **not** encoded in URLs. When sharing views with collaborators, note your settings:
 
 ```
-View URL: https://teammaclean.github.io/gbetter/?chr=chr17&start=7668421&end=7687490
+View URL: https://teammaclean.github.io/gbeta/?chr=chr17&start=7668421&end=7687490
 Settings: Light theme, Set2 palette
 ```
 

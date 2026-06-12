@@ -4,7 +4,7 @@ Thanks for kicking the tyres on **gBeta**. It's a fast, private, in-browser geno
 browser you can *ask questions* of — not just pan and zoom. It's **beta**, and your
 feedback is the whole point: tell us what's confusing, broken, missing, or slow.
 
-**Open it:** https://teammaclean.github.io/gbetter/ — nothing to install, no sign-up.
+**Open it:** https://teammaclean.github.io/gbeta/ — nothing to install, no sign-up.
 Your data stays in your browser (nothing is ever uploaded).
 
 ---

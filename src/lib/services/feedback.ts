@@ -6,7 +6,7 @@
  * track names or feature data, so nothing identifying leaves the browser.
  */
 
-const REPO = 'TeamMacLean/gbetter';
+const REPO = 'TeamMacLean/gbeta';
 const VERSION = '0.1.0';
 
 export interface FeedbackContext {

@@ -22,7 +22,7 @@ describe('summarizeTracks', () => {
 describe('buildFeedbackUrl', () => {
 	it('targets a new GitHub issue on the repo with the feedback label', () => {
 		const url = buildFeedbackUrl(ctx);
-		expect(url.startsWith('https://github.com/TeamMacLean/gbetter/issues/new?')).toBe(true);
+		expect(url.startsWith('https://github.com/TeamMacLean/gbeta/issues/new?')).toBe(true);
 		const params = new URL(url).searchParams;
 		expect(params.get('labels')).toBe('feedback');
 		expect(params.get('title')).toMatch(/gBeta feedback/);

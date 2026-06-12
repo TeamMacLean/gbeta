@@ -2,10 +2,10 @@
 
 A modern, lightweight, AI-native genome browser that runs entirely in your browser.
 
-[![CI](https://github.com/TeamMacLean/gbetter/actions/workflows/ci.yml/badge.svg)](https://github.com/TeamMacLean/gbetter/actions/workflows/ci.yml)
-[![Deploy](https://github.com/TeamMacLean/gbetter/actions/workflows/deploy.yml/badge.svg)](https://github.com/TeamMacLean/gbetter/actions/workflows/deploy.yml)
+[![CI](https://github.com/TeamMacLean/gbeta/actions/workflows/ci.yml/badge.svg)](https://github.com/TeamMacLean/gbeta/actions/workflows/ci.yml)
+[![Deploy](https://github.com/TeamMacLean/gbeta/actions/workflows/deploy.yml/badge.svg)](https://github.com/TeamMacLean/gbeta/actions/workflows/deploy.yml)
 
-> **Try it now → https://teammaclean.github.io/gbetter/**
+> **Try it now → https://teammaclean.github.io/gbeta/**
 > No installation, no sign-up, no server. Open it and start exploring. Your data never leaves your machine.
 
 ---
@@ -68,7 +68,7 @@ Three things make it different:
 
 ## Five-minute Quick Start
 
-1. **Open** https://teammaclean.github.io/gbetter/. A gene/transcript track loads automatically for the default assembly (human GRCh38).
+1. **Open** https://teammaclean.github.io/gbeta/. A gene/transcript track loads automatically for the default assembly (human GRCh38).
 2. **Pick your genome** from the assembly dropdown (top-left), if it isn't human.
 3. **Go somewhere.** Type into the search bar (top): a gene symbol like `TP53`, or coordinates like `chr17:7668421-7687490`, and press Enter.
 4. **Load your data.** Drag a `.bed`, `.gff3`, `.vcf`, `.bam` (+`.bai`), `.bw`, or `.bb` file onto the window — or use the **File** tab in the left sidebar. For remote files, use the **URL** tab.
@@ -477,13 +477,13 @@ SELECT MAX(count) GENES INTERSECT cancer-variants
 
 ### Use the hosted version (recommended)
 
-Just visit **https://teammaclean.github.io/gbetter/**. Nothing to install; data stays local.
+Just visit **https://teammaclean.github.io/gbeta/**. Nothing to install; data stays local.
 
 ### Deploy your own instance (GitHub Pages)
 
-1. **Fork** https://github.com/TeamMacLean/gbetter
+1. **Fork** https://github.com/TeamMacLean/gbeta
 2. In your fork, **Settings → Pages → Source: GitHub Actions**, and Save.
-3. The deploy workflow runs automatically; your instance goes live at `https://YOUR-USERNAME.github.io/gbetter/`.
+3. The deploy workflow runs automatically; your instance goes live at `https://YOUR-USERNAME.github.io/gbeta/`.
 4. Keep it updated by syncing your fork:
    ```bash
    git fetch upstream
@@ -494,8 +494,8 @@ Just visit **https://teammaclean.github.io/gbetter/**. Nothing to install; data 
 ### Run locally
 
 ```bash
-git clone https://github.com/TeamMacLean/gbetter.git
-cd gbetter
+git clone https://github.com/TeamMacLean/gbeta.git
+cd gbeta
 npm install
 npm run dev          # http://localhost:5173
 ```
