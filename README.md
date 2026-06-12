@@ -45,11 +45,11 @@ A modern, lightweight, AI-native genome browser that runs entirely in your brows
 
 ## What is gBeta?
 
-gBeta is a genome browser you open in a browser tab. There is nothing to install and no account to create. You load your own files (locally, so they never leave your computer) or point it at remote indexed tracks, and you explore them by panning, zooming, and — uniquely — **querying**.
+gBeta is a genome browser you open in a browser tab. There is nothing to install and no account to create. You load your own files (locally, so they never leave your computer) or point it at remote indexed tracks, and you explore them by panning, zooming, and **querying** — in place, over your own data.
 
 Three things make it different:
 
-1. **It's a query engine, not just a viewer.** Beyond pan-and-zoom, gBeta has a small, readable query language (GQL) for asking real questions of your data: *which genes here overlap variants? how many variants does each gene have? what's the average? show me the pathogenic ones inside TP53.*
+1. **Querying is built into the browser.** Beyond pan-and-zoom, gBeta has a small, readable query language (GQL) for asking real questions of your *loaded* data, right in the interactive view: *which genes here overlap variants? how many variants does each gene have? what's the average? show me the pathogenic ones inside TP53.* (Other browsers query too — via the UCSC Table Browser, Ensembl BioMart, or APIs — but typically in a separate tool, often over server-hosted data.)
 2. **It's AI-native, but reproducible.** You can ask questions in plain English. The AI translates them into GQL — a concrete, editable, shareable command — so every answer is reproducible and auditable. The AI never sees your genomic data, only your question and a summary of what's loaded.
 3. **It's private and shareable.** All parsing happens in your browser. The current view lives in the URL, so sharing a link shares exactly what you're looking at. Queries export to plain-text `.gql` scripts.
 

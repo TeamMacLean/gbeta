@@ -10,42 +10,56 @@
 
 ## Abstract
 
-Genome browsers excel at *showing* data but not at *answering questions* of it;
-conversely, emerging natural-language ("AI") tools answer questions but rarely in
-a form that is reproducible or auditable. We present **gBeta**, a lightweight,
-zero-install genome browser that runs entirely in the web browser and couples
-visual exploration with a small, readable query language (GQL). Plain-English
+Genome browsers are interactive viewers; richer interrogation of their data —
+beyond gene and coordinate search — has generally been the province of separate,
+often server-side tools and interfaces (for example the UCSC Table Browser,
+Ensembl BioMart, or programmatic REST and scripting access). Separately, language
+models make it tempting to *ask* questions of genomic data in plain English, but a
+free-text answer from an opaque model is hard to record, audit, or reproduce. We
+present **gBeta**, a lightweight, zero-install genome browser that integrates a
+small, readable query language (GQL) and a natural-language interface directly
+into the interactive browser, operating on the user's own data entirely
+client-side. Plain-English
 questions are translated by a pluggable language model into a concrete GQL
 command that the user can read, edit, save, and re-run — so the convenience of
 natural language is retained without sacrificing reproducibility. All file
 parsing is client-side; data never leaves the user's machine. gBeta supports the
 common interval, signal, variant and alignment formats (local and remote),
 resolves gene symbols against public services, and provides filtering, overlap
-and aggregation queries that turn the browser into a lightweight analysis engine.
-gBeta is open source (MIT) and usable immediately at
+and aggregation queries over loaded tracks. gBeta is open source (MIT) and usable
+immediately at
 https://teammaclean.github.io/gbeta/.
 
 ## Introduction
 
 Interactive genome browsers — IGV [1], the UCSC Genome Browser [2] and JBrowse 2
-[3] among them — are central to genomics, but they are fundamentally *viewers*:
-the user navigates and inspects, while questions such as "which genes here
-overlap a pathogenic variant?" or "what is the highest variant load on this
-chromosome?" are answered by eye or by exporting to a separate analysis
-environment. Recently, large language models have made it attractive to *ask*
-such questions in plain English. The difficulty for science is reproducibility:
-a free-text question answered by an opaque model is hard to record, audit or
-re-run, and the answer cannot easily be checked.
+[3] among them — are central to genomics, and they are far from query-incapable.
+All support navigation and search by gene or coordinate, and richer interrogation
+is available through associated tools: the UCSC Table Browser [7] and Data
+Integrator filter, intersect and export tracks, Ensembl BioMart [8] answers
+complex attribute queries, and REST APIs and scripting interfaces (e.g. IGV batch
+commands, igv.js [9], JBrowse plugins) provide programmatic access. These capabilities are powerful but
+typically sit *outside* the interactive view — in a separate page or interface, a
+programming environment, or a query against server-hosted reference data — so
+asking an ad hoc question of one's *own* loaded data, within the browser, still
+commonly means inspecting by eye or exporting to another tool.
 
-gBeta is built around a simple resolution of this tension. The browser exposes a
-small, human-readable query language (GQL); natural-language questions are
-translated *into* GQL rather than answered directly, and the translation is
-always surfaced as an editable command before it runs. The user therefore gets
-the ergonomics of asking a question and the reproducibility of a concrete script.
-A second design commitment is privacy: gBeta is a static web application with no
-backend, so genomic data is parsed and held only in the browser, and language-
-model calls transmit only the question and a small description of the loaded
-tracks — never the data itself.
+Separately, large language models have made it attractive to *ask* such questions
+in plain English. The difficulty for science is reproducibility: a free-text
+question answered by an opaque model is hard to record, audit or re-run, and the
+answer cannot easily be checked.
+
+gBeta addresses both points together, and its contribution is one of
+*integration* rather than of any single capability. The browser exposes a small,
+human-readable query language (GQL) over the tracks the user has loaded;
+natural-language questions are translated *into* GQL rather than answered
+directly, and the translation is always surfaced as an editable command before it
+runs. The user therefore gets the ergonomics of asking a question and the
+reproducibility of a concrete script, applied to their own data inside the
+interactive view rather than in a separate tool. A second design commitment is
+privacy: gBeta is a static web application with no backend, so genomic data is
+parsed and held only in the browser, and language-model calls transmit only the
+question and a small description of the loaded tracks — never the data itself.
 
 ## Implementation and features
 
@@ -153,5 +167,8 @@ implemented in TypeScript with Svelte 5 / SvelteKit and deploys as a static site
 4. Buels, R. *et al.* (2016) JBrowse: a dynamic web platform for genome visualization and analysis. *Genome Biol.* 17, 66. [GMOD JavaScript libraries, https://github.com/GMOD]
 5. Xin, J. *et al.* (2016) High-performance web services for querying gene and variant annotation. *Genome Biol.* 17, 91. [MyGene.info]
 6. Harrison, P.W. *et al.* (2024) Ensembl 2024. *Nucleic Acids Res.* 52, D891–D899.
+7. Karolchik, D. *et al.* (2004) The UCSC Table Browser data retrieval tool. *Nucleic Acids Res.* 32, D493–D496.
+8. Smedley, D. *et al.* (2015) The BioMart community portal: an innovative alternative to large, centralized data repositories. *Nucleic Acids Res.* 43, W589–W598.
+9. Robinson, J.T. *et al.* (2023) igv.js: an embeddable JavaScript implementation of the Integrative Genomics Viewer. *Bioinformatics* 39, btac830.
 
 *References to be verified and completed prior to submission.*
